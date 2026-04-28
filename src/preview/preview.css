@@ -177,8 +177,10 @@ body {
 .preview-page-content {
   flex: 1;
   display: grid;
-  gap: 8px;
+  gap: 6px;
   overflow: hidden;
+  grid-auto-rows: 1fr;
+  align-content: start;
 }
 
 .preview-page-content.columns-1 {
@@ -201,16 +203,22 @@ body {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   overflow: hidden;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  position: relative;
+  aspect-ratio: 1 / 1.2;
+}
+
+.preview-image-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
 }
 
 .preview-image-cell img {
   width: 100%;
-  height: auto;
-  object-fit: contain;
-  object-position: top;
+  display: block;
 }
 
 .preview-page-footer {

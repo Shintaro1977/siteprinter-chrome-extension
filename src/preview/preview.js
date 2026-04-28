@@ -20,9 +20,10 @@ let settings = {
   showFooter: true,
 };
 
-// Constants
+// Constants - A4 at 72 DPI for preview
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
+const MM_TO_PX = 2.83; // Approximate conversion for preview
 const MARGIN_SIZES = {
   small: 10,
   medium: 15,
@@ -97,7 +98,7 @@ function renderScreenshotList() {
   screenshotList.innerHTML = screenshots
     .filter((s) => !s.error)
     .map(
-      (screenshot, index) => `
+      (screenshot) => `
     <div class="screenshot-item">
       <div class="screenshot-thumbnail">
         <img src="${screenshot.dataUrl}" alt="">
@@ -113,7 +114,7 @@ function renderScreenshotList() {
 }
 
 function renderPreview() {
-  const validScreenshots = screenshots.filter((s) => !s.error);
+  const validScreenshots = screenshots.filter((s) => !s.error && s.dataUrl);
   if (validScreenshots.length === 0) {
     previewContainer.innerHTML = `
       <div class="preview-loading">
@@ -123,8 +124,8 @@ function renderPreview() {
     return;
   }
 
-  // Calculate pages
-  const pages = calculatePages(validScreenshots);
+  // Calculate layout
+  const pages = calculateLayout(validScreenshots);
   pageInfo.textContent = `${pages.length} ページ`;
 
   // Render pages
@@ -143,54 +144,64 @@ function renderPreview() {
     .join('');
 }
 
-function calculatePages(validScreenshots) {
+function calculateLayout(validScreenshots) {
   const pages = [];
   const margin = MARGIN_SIZES[settings.margin];
   const columns = settings.columns;
+  const cellGap = 3;
 
-  // Calculate available content area
-  const headerHeight = settings.showHeader ? 30 : 0;
-  const footerHeight = settings.showFooter ? 25 : 0;
-  const contentHeight = A4_HEIGHT_MM - margin * 2 - headerHeight - footerHeight;
+  // Calculate content area in mm
+  const headerHeight = settings.showHeader ? 25 : 0;
+  const footerHeight = settings.showFooter ? 20 : 0;
   const contentWidth = A4_WIDTH_MM - margin * 2;
-  const cellWidth = contentWidth / columns;
-  const cellGap = 3; // mm
+  const contentHeight = A4_HEIGHT_MM - margin * 2 - headerHeight - footerHeight;
+
+  // Cell dimensions
+  const cellWidthMM = (contentWidth - (columns - 1) * cellGap) / columns;
+  // Each cell is square-ish, using same aspect as the original screenshot section
+  const cellHeightMM = cellWidthMM * 1.2; // Slightly taller than wide
+
+  // How many rows fit per page
+  const rowsPerPage = Math.floor((contentHeight + cellGap) / (cellHeightMM + cellGap));
+  const cellsPerPage = rowsPerPage * columns;
 
   for (const screenshot of validScreenshots) {
     if (!screenshot.dataUrl) continue;
 
-    // Calculate how many rows this screenshot needs
-    const aspectRatio = screenshot.width / screenshot.height;
-    const scaledWidth = cellWidth - cellGap;
-    const scaledHeight = scaledWidth / aspectRatio;
+    // Calculate how screenshot splits into cells
+    // Each cell shows a portion of the screenshot at cellWidthMM width
+    const screenshotAspect = screenshot.width / screenshot.height;
 
-    // How many cells can fit in one page row
-    const rowHeight = scaledHeight;
-    const rowsPerPage = Math.floor(contentHeight / (rowHeight + cellGap));
-    const cellsPerPage = rowsPerPage * columns;
+    // Height of screenshot portion that fits in one cell (at cell width)
+    const cellContentHeight = cellHeightMM / cellWidthMM * screenshot.width;
 
-    // Split screenshot into cells
-    const totalCells = Math.ceil(screenshot.height / (screenshot.width / scaledWidth * rowHeight));
-    let currentPage = null;
-    let cellsOnCurrentPage = 0;
+    // Total number of sections needed
+    const totalSections = Math.max(1, Math.ceil(screenshot.height / cellContentHeight));
 
-    for (let i = 0; i < totalCells; i++) {
-      if (!currentPage || cellsOnCurrentPage >= cellsPerPage) {
-        currentPage = {
+    let sectionIndex = 0;
+
+    while (sectionIndex < totalSections) {
+      // Start new page
+      const page = {
+        screenshot,
+        cells: [],
+      };
+
+      // Fill page with cells
+      for (let i = 0; i < cellsPerPage && sectionIndex < totalSections; i++) {
+        const yOffsetPercent = (sectionIndex * cellContentHeight / screenshot.height) * 100;
+        const heightPercent = (cellContentHeight / screenshot.height) * 100;
+
+        page.cells.push({
           screenshot,
-          cells: [],
-        };
-        pages.push(currentPage);
-        cellsOnCurrentPage = 0;
+          sectionIndex,
+          yOffsetPercent: Math.min(yOffsetPercent, 100),
+          heightPercent,
+        });
+        sectionIndex++;
       }
 
-      const yOffset = i * rowHeight;
-      currentPage.cells.push({
-        screenshot,
-        yOffset: (yOffset / scaledHeight) * 100,
-        cellIndex: i,
-      });
-      cellsOnCurrentPage++;
+      pages.push(page);
     }
   }
 
@@ -226,9 +237,16 @@ function renderFooter(pageNum, totalPages) {
 }
 
 function renderCell(cell) {
+  // Calculate the visible portion of the image
+  const clipHeight = cell.heightPercent;
+  const translateY = cell.yOffsetPercent;
+
   return `
     <div class="preview-image-cell">
-      <img src="${cell.screenshot.dataUrl}" alt="" style="transform: translateY(-${cell.yOffset}%);">
+      <div class="preview-image-wrapper" style="height: 100%; overflow: hidden;">
+        <img src="${cell.screenshot.dataUrl}" alt=""
+             style="width: 100%; transform: translateY(-${translateY}%); transform-origin: top left;">
+      </div>
     </div>
   `;
 }
@@ -242,8 +260,10 @@ async function generatePDF() {
 
   showLoading('PDFを生成中...');
 
+  // Use setTimeout to allow UI to update
+  await new Promise(resolve => setTimeout(resolve, 100));
+
   try {
-    // Create PDF
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -252,101 +272,117 @@ async function generatePDF() {
 
     const margin = MARGIN_SIZES[settings.margin];
     const columns = settings.columns;
-    const headerHeight = settings.showHeader ? 15 : 0;
-    const footerHeight = settings.showFooter ? 10 : 0;
+    const cellGap = 2;
+    const headerHeight = settings.showHeader ? 18 : 0;
+    const footerHeight = settings.showFooter ? 12 : 0;
+
     const contentWidth = A4_WIDTH_MM - margin * 2;
     const contentHeight = A4_HEIGHT_MM - margin * 2 - headerHeight - footerHeight;
-    const cellWidth = (contentWidth - (columns - 1) * 2) / columns;
-    const cellGap = 2;
+    const cellWidth = (contentWidth - (columns - 1) * cellGap) / columns;
+    const cellHeight = cellWidth * 1.2;
 
-    let pageNum = 0;
+    const rowsPerPage = Math.floor((contentHeight + cellGap) / (cellHeight + cellGap));
+    const cellsPerPage = rowsPerPage * columns;
+
+    let totalPageNum = 0;
+    let isFirstPage = true;
 
     for (const screenshot of validScreenshots) {
       // Load image
       const img = await loadImage(screenshot.dataUrl);
-      const aspectRatio = img.width / img.height;
 
-      // Calculate cell height based on width and aspect ratio
-      const cellHeight = cellWidth / aspectRatio;
-
-      // Calculate how many rows fit per page
-      const rowsPerPage = Math.floor(contentHeight / (cellHeight + cellGap));
-      const cellsPerPage = rowsPerPage * columns;
-
-      // Calculate total sections needed
-      const sectionHeight = (img.height / img.width) * cellWidth;
-      const sectionsNeeded = Math.ceil(sectionHeight / cellHeight);
+      // Calculate sections
+      const cellContentHeightPx = (cellHeight / cellWidth) * img.width;
+      const totalSections = Math.max(1, Math.ceil(img.height / cellContentHeightPx));
 
       let sectionIndex = 0;
 
-      while (sectionIndex < sectionsNeeded) {
-        if (pageNum > 0) {
+      while (sectionIndex < totalSections) {
+        // Add new page (except for first)
+        if (!isFirstPage) {
           pdf.addPage();
         }
-        pageNum++;
+        isFirstPage = false;
+        totalPageNum++;
 
         let y = margin;
 
         // Add header
         if (settings.showHeader) {
-          pdf.setFontSize(10);
+          pdf.setFontSize(9);
           pdf.setTextColor(30, 41, 59);
-          pdf.text(screenshot.title.substring(0, 80), margin, y + 8);
-          pdf.setFontSize(7);
+          const title = screenshot.title ? screenshot.title.substring(0, 70) : 'Untitled';
+          pdf.text(title, margin, y + 6);
+
+          pdf.setFontSize(6);
           pdf.setTextColor(100, 116, 139);
-          pdf.text(screenshot.url.substring(0, 100), margin, y + 13);
+          const url = screenshot.url ? screenshot.url.substring(0, 90) : '';
+          pdf.text(url, margin, y + 11);
+
           y += headerHeight;
         }
 
-        // Add content cells
-        let row = 0;
-        let col = 0;
+        // Add cells to page
+        for (let cellIndex = 0; cellIndex < cellsPerPage && sectionIndex < totalSections; cellIndex++) {
+          const row = Math.floor(cellIndex / columns);
+          const col = cellIndex % columns;
 
-        while (sectionIndex < sectionsNeeded && row < rowsPerPage) {
-          const x = margin + col * (cellWidth + cellGap);
+          const cellX = margin + col * (cellWidth + cellGap);
           const cellY = y + row * (cellHeight + cellGap);
 
           // Calculate source rectangle for this section
-          const sourceY = (sectionIndex / sectionsNeeded) * img.height;
-          const sourceHeight = img.height / sectionsNeeded;
+          const sourceY = Math.floor(sectionIndex * cellContentHeightPx);
+          const sourceHeight = Math.min(cellContentHeightPx, img.height - sourceY);
 
-          // Create canvas for this section
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = sourceHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(
-            img,
-            0,
-            sourceY,
-            img.width,
-            sourceHeight,
-            0,
-            0,
-            img.width,
-            sourceHeight
-          );
+          if (sourceHeight > 0) {
+            // Create canvas for this section
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = Math.ceil(sourceHeight);
 
-          // Add to PDF
-          const sectionDataUrl = canvas.toDataURL('image/jpeg', 0.85);
-          pdf.addImage(sectionDataUrl, 'JPEG', x, cellY, cellWidth, cellHeight);
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-          // Draw border
-          pdf.setDrawColor(226, 232, 240);
-          pdf.rect(x, cellY, cellWidth, cellHeight);
+            ctx.drawImage(
+              img,
+              0, sourceY, img.width, sourceHeight,
+              0, 0, img.width, sourceHeight
+            );
+
+            // Convert to data URL and add to PDF
+            const sectionDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+            // Calculate actual height to maintain aspect ratio
+            const actualCellHeight = (sourceHeight / img.width) * cellWidth;
+
+            pdf.addImage(
+              sectionDataUrl,
+              'JPEG',
+              cellX,
+              cellY,
+              cellWidth,
+              Math.min(actualCellHeight, cellHeight)
+            );
+
+            // Draw border
+            pdf.setDrawColor(220, 220, 220);
+            pdf.setLineWidth(0.2);
+            pdf.rect(cellX, cellY, cellWidth, Math.min(actualCellHeight, cellHeight));
+          }
 
           sectionIndex++;
-          col++;
-          if (col >= columns) {
-            col = 0;
-            row++;
+
+          // Allow UI to remain responsive
+          if (sectionIndex % 4 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
           }
         }
 
         // Add footer
         if (settings.showFooter) {
-          const footerY = A4_HEIGHT_MM - margin - 5;
-          pdf.setFontSize(7);
+          const footerY = A4_HEIGHT_MM - margin - 4;
+          pdf.setFontSize(6);
           pdf.setTextColor(148, 163, 184);
 
           const date = new Date(capturedAt);
@@ -359,15 +395,8 @@ async function generatePDF() {
           });
 
           pdf.text(dateStr, margin, footerY);
-          pdf.text(
-            `${pageNum}`,
-            A4_WIDTH_MM / 2,
-            footerY,
-            { align: 'center' }
-          );
-          pdf.text('SitePrinter for Chrome', A4_WIDTH_MM - margin, footerY, {
-            align: 'right',
-          });
+          pdf.text(`${totalPageNum}`, A4_WIDTH_MM / 2, footerY, { align: 'center' });
+          pdf.text('SitePrinter for Chrome', A4_WIDTH_MM - margin, footerY, { align: 'right' });
         }
       }
     }
@@ -391,7 +420,7 @@ function loadImage(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);
-    img.onerror = reject;
+    img.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
     img.src = src;
   });
 }
