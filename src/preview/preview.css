@@ -179,8 +179,7 @@ body {
   display: grid;
   gap: 6px;
   overflow: hidden;
-  grid-auto-rows: 1fr;
-  align-content: start;
+  grid-template-rows: 1fr; /* Single row takes full height */
 }
 
 .preview-page-content.columns-1 {
@@ -200,11 +199,11 @@ body {
 }
 
 .preview-image-cell {
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   overflow: hidden;
   position: relative;
-  aspect-ratio: 1 / 1.2;
+  min-height: 0; /* Allow proper sizing in grid */
 }
 
 .preview-image-wrapper {

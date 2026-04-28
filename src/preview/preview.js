@@ -156,27 +156,24 @@ function calculateLayout(validScreenshots) {
   const contentWidth = A4_WIDTH_MM - margin * 2;
   const contentHeight = A4_HEIGHT_MM - margin * 2 - headerHeight - footerHeight;
 
-  // Cell dimensions
+  // Cell dimensions - each cell takes full height (1 row per page)
   const cellWidthMM = (contentWidth - (columns - 1) * cellGap) / columns;
-  // Each cell is square-ish, using same aspect as the original screenshot section
-  const cellHeightMM = cellWidthMM * 1.2; // Slightly taller than wide
+  const cellHeightMM = contentHeight; // Full height - 1 row only
 
-  // How many rows fit per page
-  const rowsPerPage = Math.floor((contentHeight + cellGap) / (cellHeightMM + cellGap));
-  const cellsPerPage = rowsPerPage * columns;
+  // 1 row per page, so cellsPerPage = columns
+  const cellsPerPage = columns;
 
   for (const screenshot of validScreenshots) {
     if (!screenshot.dataUrl) continue;
 
     // Calculate how screenshot splits into cells
-    // Each cell shows a portion of the screenshot at cellWidthMM width
-    const screenshotAspect = screenshot.width / screenshot.height;
-
-    // Height of screenshot portion that fits in one cell (at cell width)
-    const cellContentHeight = cellHeightMM / cellWidthMM * screenshot.width;
+    // Each cell shows a vertical portion of the screenshot
+    // Cell aspect ratio determines how much of the screenshot fits in one cell
+    const cellAspect = cellWidthMM / cellHeightMM;
+    const cellContentHeightPx = screenshot.width / cellAspect;
 
     // Total number of sections needed
-    const totalSections = Math.max(1, Math.ceil(screenshot.height / cellContentHeight));
+    const totalSections = Math.max(1, Math.ceil(screenshot.height / cellContentHeightPx));
 
     let sectionIndex = 0;
 
@@ -187,10 +184,10 @@ function calculateLayout(validScreenshots) {
         cells: [],
       };
 
-      // Fill page with cells
+      // Fill page with cells (columns cells per page)
       for (let i = 0; i < cellsPerPage && sectionIndex < totalSections; i++) {
-        const yOffsetPercent = (sectionIndex * cellContentHeight / screenshot.height) * 100;
-        const heightPercent = (cellContentHeight / screenshot.height) * 100;
+        const yOffsetPercent = (sectionIndex * cellContentHeightPx / screenshot.height) * 100;
+        const heightPercent = (cellContentHeightPx / screenshot.height) * 100;
 
         page.cells.push({
           screenshot,
@@ -279,10 +276,10 @@ async function generatePDF() {
     const contentWidth = A4_WIDTH_MM - margin * 2;
     const contentHeight = A4_HEIGHT_MM - margin * 2 - headerHeight - footerHeight;
     const cellWidth = (contentWidth - (columns - 1) * cellGap) / columns;
-    const cellHeight = cellWidth * 1.2;
+    const cellHeight = contentHeight; // Full height - 1 row per page
 
-    const rowsPerPage = Math.floor((contentHeight + cellGap) / (cellHeight + cellGap));
-    const cellsPerPage = rowsPerPage * columns;
+    // 1 row per page
+    const cellsPerPage = columns;
 
     let totalPageNum = 0;
     let isFirstPage = true;
@@ -291,8 +288,9 @@ async function generatePDF() {
       // Load image
       const img = await loadImage(screenshot.dataUrl);
 
-      // Calculate sections
-      const cellContentHeightPx = (cellHeight / cellWidth) * img.width;
+      // Calculate sections - cell aspect ratio determines screenshot portion
+      const cellAspect = cellWidth / cellHeight;
+      const cellContentHeightPx = img.width / cellAspect;
       const totalSections = Math.max(1, Math.ceil(img.height / cellContentHeightPx));
 
       let sectionIndex = 0;
@@ -322,13 +320,12 @@ async function generatePDF() {
           y += headerHeight;
         }
 
-        // Add cells to page
+        // Add cells to page (1 row, multiple columns)
         for (let cellIndex = 0; cellIndex < cellsPerPage && sectionIndex < totalSections; cellIndex++) {
-          const row = Math.floor(cellIndex / columns);
-          const col = cellIndex % columns;
+          const col = cellIndex; // Only 1 row, so cellIndex = column
 
           const cellX = margin + col * (cellWidth + cellGap);
-          const cellY = y + row * (cellHeight + cellGap);
+          const cellY = y; // All cells on same row
 
           // Calculate source rectangle for this section
           const sourceY = Math.floor(sectionIndex * cellContentHeightPx);
