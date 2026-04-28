@@ -1,0 +1,20 @@
+{
+  "name": "siteprinter-chrome-extension",
+  "version": "1.0.0",
+  "description": "SitePrinter for Chrome - Capture full page screenshots and export to PDF",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build",
+    "clean": "rm -rf dist",
+    "generate-icons": "node scripts/generate-icons.js"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5",
+    "vite": "^5.4.0",
+    "vite-plugin-static-copy": "^1.0.6"
+  },
+  "dependencies": {
+    "jspdf": "^2.5.1"
+  }
+}

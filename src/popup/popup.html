@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SitePrinter for Chrome</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 class="logo">SitePrinter</h1>
+      <span class="badge">for Chrome</span>
+    </header>
+
+    <main class="main">
+      <section class="capture-section">
+        <h2 class="section-title">キャプチャ対象</h2>
+
+        <div class="tab-selector">
+          <label class="radio-card active">
+            <input type="radio" name="captureMode" value="current" checked>
+            <span class="radio-content">
+              <span class="radio-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="9" y1="3" x2="9" y2="21"></line>
+                </svg>
+              </span>
+              <span class="radio-label">現在のタブ</span>
+            </span>
+          </label>
+
+          <label class="radio-card">
+            <input type="radio" name="captureMode" value="multiple">
+            <span class="radio-content">
+              <span class="radio-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="9" y1="3" x2="9" y2="21"></line>
+                  <rect x="7" y="7" width="14" height="14" rx="2" ry="2" fill="white"></rect>
+                  <line x1="13" y1="7" x2="13" y2="21"></line>
+                </svg>
+              </span>
+              <span class="radio-label">複数タブを選択</span>
+            </span>
+          </label>
+        </div>
+
+        <div id="tabList" class="tab-list hidden">
+          <div class="tab-list-loading">
+            <span class="spinner"></span>
+            タブを読み込み中...
+          </div>
+        </div>
+      </section>
+
+      <button id="captureBtn" class="capture-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+          <circle cx="12" cy="13" r="4"></circle>
+        </svg>
+        <span>スクリーンショットを取得</span>
+      </button>
+    </main>
+
+    <footer class="footer">
+      <a href="https://siteprinter.jp" target="_blank" class="footer-link">siteprinter.jp</a>
+    </footer>
+  </div>
+
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="loading-content">
+      <span class="spinner large"></span>
+      <p id="loadingText">スクリーンショットを取得中...</p>
+    </div>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

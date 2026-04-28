@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SitePrinter - プレビュー</title>
+  <link rel="stylesheet" href="preview.css">
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <h1 class="logo">SitePrinter</h1>
+        <span class="badge">for Chrome</span>
+      </div>
+      <div class="header-right">
+        <button id="downloadBtn" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          PDFをダウンロード
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="app-main">
+      <!-- Preview Panel -->
+      <div class="preview-panel">
+        <div class="preview-header">
+          <span class="preview-title">プレビュー</span>
+          <span id="pageInfo" class="page-info">1 / 1 ページ</span>
+        </div>
+        <div id="previewContainer" class="preview-container">
+          <div class="preview-loading">
+            <span class="spinner large"></span>
+            <p>プレビューを生成中...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Panel -->
+      <div class="settings-panel">
+        <div class="settings-header">
+          <h2 class="settings-title">設定</h2>
+        </div>
+        <div class="settings-content">
+          <!-- Layout Settings -->
+          <section class="settings-section">
+            <h3 class="section-title">レイアウト</h3>
+
+            <div class="setting-item">
+              <label class="setting-label">列数</label>
+              <div class="column-selector">
+                <button class="column-btn" data-columns="1">1列</button>
+                <button class="column-btn active" data-columns="2">2列</button>
+                <button class="column-btn" data-columns="3">3列</button>
+                <button class="column-btn" data-columns="4">4列</button>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <label class="setting-label">余白</label>
+              <div class="margin-selector">
+                <button class="margin-btn" data-margin="small">狭い</button>
+                <button class="margin-btn active" data-margin="medium">標準</button>
+                <button class="margin-btn" data-margin="large">広い</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Header/Footer Settings -->
+          <section class="settings-section">
+            <h3 class="section-title">ヘッダー・フッター</h3>
+
+            <div class="setting-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showHeader" checked>
+                <span>ヘッダーを表示</span>
+              </label>
+              <p class="setting-description">ページタイトルとURLを表示</p>
+            </div>
+
+            <div class="setting-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showFooter" checked>
+                <span>フッターを表示</span>
+              </label>
+              <p class="setting-description">日時・ページ番号・ロゴを表示</p>
+            </div>
+          </section>
+
+          <!-- Screenshot List -->
+          <section class="settings-section">
+            <h3 class="section-title">スクリーンショット</h3>
+            <div id="screenshotList" class="screenshot-list">
+              <!-- Populated by JS -->
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="loading-content">
+      <span class="spinner large"></span>
+      <p id="loadingText">PDFを生成中...</p>
+    </div>
+  </div>
+
+  <script type="module" src="preview.js"></script>
+</body>
+</html>
