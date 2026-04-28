@@ -189,11 +189,21 @@ function calculateLayout(validScreenshots) {
         const yOffsetPercent = (sectionIndex * cellContentHeightPx / screenshot.height) * 100;
         const heightPercent = (cellContentHeightPx / screenshot.height) * 100;
 
+        // Check if this is the last section
+        const isLastSection = sectionIndex === totalSections - 1;
+        // Calculate actual remaining height for last section
+        const remainingPx = screenshot.height - (sectionIndex * cellContentHeightPx);
+        const actualHeightPercent = isLastSection
+          ? (remainingPx / cellContentHeightPx) * 100
+          : 100;
+
         page.cells.push({
           screenshot,
           sectionIndex,
           yOffsetPercent: Math.min(yOffsetPercent, 100),
           heightPercent,
+          isLastSection,
+          actualHeightPercent: Math.min(actualHeightPercent, 100),
         });
         sectionIndex++;
       }
@@ -235,11 +245,15 @@ function renderFooter(pageNum, totalPages) {
 
 function renderCell(cell) {
   // Calculate the visible portion of the image
-  const clipHeight = cell.heightPercent;
   const translateY = cell.yOffsetPercent;
 
+  // For the last section, adjust height to actual remaining content
+  const cellHeightStyle = cell.isLastSection
+    ? `height: ${cell.actualHeightPercent}%;`
+    : 'height: 100%;';
+
   return `
-    <div class="preview-image-cell">
+    <div class="preview-image-cell" style="${cellHeightStyle}">
       <div class="preview-image-wrapper" style="height: 100%; overflow: hidden;">
         <img src="${cell.screenshot.dataUrl}" alt=""
              style="width: 100%; transform: translateY(-${translateY}%); transform-origin: top left;">
