@@ -11,6 +11,7 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, 'src/popup/popup.html'),
         preview: resolve(__dirname, 'src/preview/preview.html'),
+        progress: resolve(__dirname, 'src/progress/progress.html'),
         'service-worker': resolve(__dirname, 'src/background/service-worker.js'),
         content: resolve(__dirname, 'src/content/content.js'),
       },
@@ -46,6 +47,10 @@ export default defineConfig({
         {
           src: 'assets/icons/*',
           dest: 'assets/icons',
+        },
+        {
+          src: 'src/assets/fonts/*',
+          dest: 'assets/fonts',
         },
       ],
     }),

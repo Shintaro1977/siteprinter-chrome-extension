@@ -47,10 +47,26 @@
         <div class="settings-header">
           <h2 class="settings-title">設定</h2>
         </div>
+        <div class="settings-notice">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span>プレビューと実際のPDFは完全に同一ではない場合があります</span>
+        </div>
         <div class="settings-content">
           <!-- Layout Settings -->
           <section class="settings-section">
             <h3 class="section-title">レイアウト</h3>
+
+            <div class="setting-item">
+              <label class="setting-label">用紙サイズ</label>
+              <div class="paper-size-selector">
+                <button class="paper-size-btn active" data-paper-size="a4">A4</button>
+                <button class="paper-size-btn" data-paper-size="a3">A3</button>
+              </div>
+            </div>
 
             <div class="setting-item">
               <label class="setting-label">列数</label>
@@ -63,12 +79,13 @@
             </div>
 
             <div class="setting-item">
-              <label class="setting-label">余白</label>
-              <div class="margin-selector">
-                <button class="margin-btn" data-margin="small">狭い</button>
-                <button class="margin-btn active" data-margin="medium">標準</button>
-                <button class="margin-btn" data-margin="large">広い</button>
+              <label class="setting-label">重複エリア</label>
+              <div class="overlap-selector">
+                <button class="overlap-btn active" data-overlap="none">なし</button>
+                <button class="overlap-btn" data-overlap="small">少し</button>
+                <button class="overlap-btn" data-overlap="large">多め</button>
               </div>
+              <p class="setting-description">セクション間の重なり量</p>
             </div>
           </section>
 

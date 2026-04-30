@@ -55,6 +55,9 @@ async function loadTabs() {
     const tabs = await chrome.tabs.query({ currentWindow: true });
     allTabs = tabs.filter((tab) => tab.url && !tab.url.startsWith('chrome://'));
 
+    // Select all tabs by default
+    selectedTabs = allTabs.map((tab) => tab.id);
+
     renderTabList();
   } catch (error) {
     console.error('Failed to load tabs:', error);
@@ -134,24 +137,14 @@ async function handleCapture() {
   // Show loading
   showLoading('スクリーンショットを取得中...');
 
-  try {
-    // Send message to background script to capture
-    const result = await chrome.runtime.sendMessage({
-      action: 'captureScreenshots',
-      tabIds: tabsToCapture,
-    });
+  // Send message to background script (fire and forget)
+  chrome.runtime.sendMessage({
+    action: 'captureScreenshots',
+    tabIds: tabsToCapture,
+  });
 
-    if (result.success) {
-      // Close popup and open preview page
-      window.close();
-    } else {
-      throw new Error(result.error || 'キャプチャに失敗しました');
-    }
-  } catch (error) {
-    console.error('Capture failed:', error);
-    hideLoading();
-    alert(`エラー: ${error.message}`);
-  }
+  // Close popup immediately - background script handles the rest
+  window.close();
 }
 
 function showLoading(text) {

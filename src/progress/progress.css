@@ -1,0 +1,136 @@
+/* Progress Window Styles for SitePrinter Chrome Extension */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  padding: 16px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+#main {
+  width: 100%;
+  max-width: 350px;
+}
+
+/* Page Title */
+#pageTitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Progress Section */
+#capturing {
+  margin-bottom: 12px;
+}
+
+#progressAndButton {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Progress Container */
+#progressContainer {
+  flex: 1;
+  height: 20px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Progress Bar */
+#progressValue {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  border-radius: 10px;
+  transition: width 0.3s ease-out;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.3);
+}
+
+/* Percentage Text */
+#progressPercent {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  min-width: 45px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Processing Label */
+#processingLabel {
+  width: 100%;
+  text-align: center;
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 8px;
+  opacity: 1;
+  transition: opacity 0.2s ease-in;
+  font-weight: 500;
+}
+
+#processingLabel.hidden {
+  display: none;
+}
+
+/* Animation for processing label */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+#processingLabel:not(.hidden) {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Progress bar animation when processing */
+#progressValue:has(~ ~ #processingLabel:not(.hidden)) {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+  body {
+    padding: 12px;
+  }
+
+  #progressPercent {
+    font-size: 12px;
+    min-width: 40px;
+  }
+
+  #processingLabel {
+    font-size: 12px;
+  }
+}
+
+/* Error state */
+#processingLabel[style*="color: #ef4444"] {
+  animation: none;
+  font-weight: 600;
+}

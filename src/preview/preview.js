@@ -1,5 +1,48 @@
 import { jsPDF } from 'jspdf';
 
+// Japanese font state
+let japaneseFontBase64 = null;
+
+// Load Japanese font (Noto Sans JP)
+async function loadJapaneseFont() {
+  if (japaneseFontBase64) return japaneseFontBase64;
+
+  try {
+    const fontUrl = chrome.runtime.getURL('assets/fonts/NotoSansJP-Regular.ttf');
+    const response = await fetch(fontUrl);
+    const arrayBuffer = await response.arrayBuffer();
+
+    // Convert ArrayBuffer to base64
+    const bytes = new Uint8Array(arrayBuffer);
+    let binary = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode.apply(null, chunk);
+    }
+    japaneseFontBase64 = btoa(binary);
+    return japaneseFontBase64;
+  } catch (error) {
+    console.error('Failed to load Japanese font:', error);
+    return null;
+  }
+}
+
+// Register Japanese font with jsPDF instance
+function registerJapaneseFont(pdf, fontBase64) {
+  if (!fontBase64) return false;
+
+  try {
+    pdf.addFileToVFS('NotoSansJP-Regular.ttf', fontBase64);
+    pdf.addFont('NotoSansJP-Regular.ttf', 'NotoSansJP', 'normal');
+    pdf.setFont('NotoSansJP');
+    return true;
+  } catch (error) {
+    console.error('Failed to register Japanese font:', error);
+    return false;
+  }
+}
+
 // DOM Elements
 const previewContainer = document.getElementById('previewContainer');
 const pageInfo = document.getElementById('pageInfo');
@@ -14,26 +57,36 @@ const showFooterCheckbox = document.getElementById('showFooter');
 let screenshots = [];
 let capturedAt = '';
 let settings = {
+  paperSize: 'a4',
   columns: 2,
-  margin: 'medium',
+  overlap: 'none',
   showHeader: true,
   showFooter: true,
 };
 
-// Constants - A4 at 72 DPI for preview
-const A4_WIDTH_MM = 210;
-const A4_HEIGHT_MM = 297;
+// Constants
+const PAPER_SIZES = {
+  a4: { width: 210, height: 297 }, // A4: 210mm x 297mm
+  a3: { width: 297, height: 420 }, // A3: 297mm x 420mm
+};
 const MM_TO_PX = 2.83; // Approximate conversion for preview
-const MARGIN_SIZES = {
-  small: 10,
-  medium: 15,
-  large: 20,
+const PAGE_MARGIN = 7; // Page margin in mm
+const HEADER_HEIGHT = 15; // Header height in mm
+const FOOTER_HEIGHT = 8; // Footer height in mm
+const CONTENT_SPACING = 2.5; // Spacing between header/footer and content in mm
+const OVERLAP_SIZES = {
+  none: 0,      // No overlap
+  small: 0.03,  // 3% overlap
+  large: 0.05,  // 5% overlap
 };
 
 // Initialize
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
+  // Preload Japanese font
+  loadJapaneseFont();
+
   // Load screenshots from storage
   const data = await chrome.storage.local.get(['screenshots', 'capturedAt']);
   screenshots = data.screenshots || [];
@@ -59,6 +112,16 @@ async function init() {
 }
 
 function setupEventListeners() {
+  // Paper size buttons
+  document.querySelectorAll('.paper-size-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.paper-size-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      settings.paperSize = btn.dataset.paperSize;
+      renderPreview();
+    });
+  });
+
   // Column buttons
   document.querySelectorAll('.column-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -69,12 +132,12 @@ function setupEventListeners() {
     });
   });
 
-  // Margin buttons
-  document.querySelectorAll('.margin-btn').forEach((btn) => {
+  // Overlap buttons
+  document.querySelectorAll('.overlap-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.margin-btn').forEach((b) => b.classList.remove('active'));
+      document.querySelectorAll('.overlap-btn').forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
-      settings.margin = btn.dataset.margin;
+      settings.overlap = btn.dataset.overlap;
       renderPreview();
     });
   });
@@ -132,7 +195,7 @@ function renderPreview() {
   previewContainer.innerHTML = pages
     .map(
       (page, pageIndex) => `
-    <div class="preview-page">
+    <div class="preview-page paper-size-${settings.paperSize}">
       ${settings.showHeader ? renderHeader(page.screenshot) : ''}
       <div class="preview-page-content columns-${settings.columns}">
         ${page.cells.map((cell) => renderCell(cell)).join('')}
@@ -146,19 +209,30 @@ function renderPreview() {
 
 function calculateLayout(validScreenshots) {
   const pages = [];
-  const margin = MARGIN_SIZES[settings.margin];
   const columns = settings.columns;
-  const cellGap = 3;
+  const cellGap = 2; // Match PDF cellGap
+  const overlapRatio = OVERLAP_SIZES[settings.overlap];
+
+  // Get paper dimensions based on selected size
+  const paperSize = PAPER_SIZES[settings.paperSize];
+  const paperWidth = paperSize.width;
+  const paperHeight = paperSize.height;
 
   // Calculate content area in mm
-  const headerHeight = settings.showHeader ? 25 : 0;
-  const footerHeight = settings.showFooter ? 20 : 0;
-  const contentWidth = A4_WIDTH_MM - margin * 2;
-  const contentHeight = A4_HEIGHT_MM - margin * 2 - headerHeight - footerHeight;
+  // Header/footer heights include spacing to content
+  const headerHeight = settings.showHeader ? (HEADER_HEIGHT + CONTENT_SPACING) : 0;
+  const footerHeight = settings.showFooter ? (FOOTER_HEIGHT + CONTENT_SPACING) : 0;
+  const contentWidth = paperWidth - PAGE_MARGIN * 2;
+  const contentHeight = paperHeight - PAGE_MARGIN * 2 - headerHeight - footerHeight;
+
+  // Reserve space for section label (matching PDF)
+  const labelSpacing = 2; // Space above label (mm)
+  const labelHeight = 3; // Space for label itself (mm)
+  const availableCellHeight = contentHeight - labelSpacing - labelHeight;
 
   // Cell dimensions - each cell takes full height (1 row per page)
   const cellWidthMM = (contentWidth - (columns - 1) * cellGap) / columns;
-  const cellHeightMM = contentHeight; // Full height - 1 row only
+  const cellHeightMM = availableCellHeight; // Height minus label space
 
   // 1 row per page, so cellsPerPage = columns
   const cellsPerPage = columns;
@@ -172,8 +246,11 @@ function calculateLayout(validScreenshots) {
     const cellAspect = cellWidthMM / cellHeightMM;
     const cellContentHeightPx = screenshot.width / cellAspect;
 
-    // Total number of sections needed
-    const totalSections = Math.max(1, Math.ceil(screenshot.height / cellContentHeightPx));
+    // Calculate step size (how much to advance per section, accounting for overlap)
+    const stepHeightPx = cellContentHeightPx * (1 - overlapRatio);
+
+    // Total number of sections needed (with overlap)
+    const totalSections = Math.max(1, Math.ceil((screenshot.height - cellContentHeightPx * overlapRatio) / stepHeightPx));
 
     let sectionIndex = 0;
 
@@ -186,39 +263,52 @@ function calculateLayout(validScreenshots) {
 
       // Fill page with cells (columns cells per page)
       for (let i = 0; i < cellsPerPage && sectionIndex < totalSections; i++) {
-        const yOffsetPercent = (sectionIndex * cellContentHeightPx / screenshot.height) * 100;
-        const heightPercent = (cellContentHeightPx / screenshot.height) * 100;
+        // Calculate Y offset with overlap
+        const yOffsetPx = sectionIndex * stepHeightPx;
+        const yOffsetPercent = (yOffsetPx / screenshot.height) * 100;
 
         // Check if this is the last section
         const isLastSection = sectionIndex === totalSections - 1;
         // Calculate actual remaining height for last section
-        const remainingPx = screenshot.height - (sectionIndex * cellContentHeightPx);
+        const remainingPx = screenshot.height - yOffsetPx;
         const actualHeightPercent = isLastSection
-          ? (remainingPx / cellContentHeightPx) * 100
+          ? Math.min((remainingPx / cellContentHeightPx) * 100, 100)
           : 100;
+
+        // Cell aspect ratio (height/width) for padding-bottom calculation
+        const cellAspectRatio = cellHeightMM / cellWidthMM;
 
         page.cells.push({
           screenshot,
           sectionIndex,
+          totalSections,
           yOffsetPercent: Math.min(yOffsetPercent, 100),
-          heightPercent,
           isLastSection,
           actualHeightPercent: Math.min(actualHeightPercent, 100),
+          cellAspectRatio,
         });
         sectionIndex++;
       }
 
       pages.push(page);
     }
+
   }
 
   return pages;
 }
 
 function renderHeader(screenshot) {
+  const faviconHtml = screenshot.favIconUrl
+    ? `<img class="header-favicon" src="${escapeHtml(screenshot.favIconUrl)}" alt="" onerror="this.style.display='none'">`
+    : '';
+
   return `
     <div class="preview-page-header">
-      <div class="preview-page-title">${escapeHtml(screenshot.title)}</div>
+      <div class="preview-page-title-row">
+        ${faviconHtml}
+        <div class="preview-page-title">${escapeHtml(screenshot.title)}</div>
+      </div>
       <div class="preview-page-url">${escapeHtml(screenshot.url)}</div>
     </div>
   `;
@@ -244,20 +334,33 @@ function renderFooter(pageNum, totalPages) {
 }
 
 function renderCell(cell) {
-  // Calculate the visible portion of the image
   const translateY = cell.yOffsetPercent;
+  const sectionLabel = `[${cell.sectionIndex + 1}/${cell.totalSections}]`;
 
-  // For the last section, adjust height to actual remaining content
-  const cellHeightStyle = cell.isLastSection
-    ? `height: ${cell.actualHeightPercent}%;`
-    : 'height: 100%;';
+  // For the last section, use padding-bottom trick for exact sizing
+  if (cell.isLastSection && cell.actualHeightPercent < 100) {
+    const paddingBottom = cell.cellAspectRatio * cell.actualHeightPercent;
+
+    return `
+      <div class="preview-image-cell preview-image-cell--last">
+        <div style="position: relative; width: 100%; padding-bottom: ${paddingBottom}%; overflow: hidden; background: #ffffff; border: 1px solid #e2e8f0;">
+          <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;">
+            <img src="${cell.screenshot.dataUrl}" alt=""
+                 style="width: 100%; transform: translateY(-${translateY}%); transform-origin: top left;">
+          </div>
+        </div>
+        <div class="cell-section-label">${sectionLabel}</div>
+      </div>
+    `;
+  }
 
   return `
-    <div class="preview-image-cell" style="${cellHeightStyle}">
-      <div class="preview-image-wrapper" style="height: 100%; overflow: hidden;">
+    <div class="preview-image-cell">
+      <div class="preview-image-wrapper">
         <img src="${cell.screenshot.dataUrl}" alt=""
              style="width: 100%; transform: translateY(-${translateY}%); transform-origin: top left;">
       </div>
+      <div class="cell-section-label">${sectionLabel}</div>
     </div>
   `;
 }
@@ -275,25 +378,58 @@ async function generatePDF() {
   await new Promise(resolve => setTimeout(resolve, 100));
 
   try {
+    // Ensure Japanese font is loaded
+    const fontBase64 = await loadJapaneseFont();
+
+    // Get paper dimensions based on selected size
+    const paperSize = PAPER_SIZES[settings.paperSize];
+    const paperWidth = paperSize.width;
+    const paperHeight = paperSize.height;
+
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: 'a4',
+      format: settings.paperSize,
     });
 
-    const margin = MARGIN_SIZES[settings.margin];
+    // Register and set Japanese font
+    const hasJapaneseFont = registerJapaneseFont(pdf, fontBase64);
+
     const columns = settings.columns;
     const cellGap = 2;
-    const headerHeight = settings.showHeader ? 18 : 0;
-    const footerHeight = settings.showFooter ? 12 : 0;
+    // Header/footer heights include spacing to content
+    const headerHeight = settings.showHeader ? (HEADER_HEIGHT + CONTENT_SPACING) : 0;
+    const footerHeight = settings.showFooter ? (FOOTER_HEIGHT + CONTENT_SPACING) : 0;
+    const overlapRatio = OVERLAP_SIZES[settings.overlap];
 
-    const contentWidth = A4_WIDTH_MM - margin * 2;
-    const contentHeight = A4_HEIGHT_MM - margin * 2 - headerHeight - footerHeight;
+    const contentWidth = paperWidth - PAGE_MARGIN * 2;
+    const contentHeight = paperHeight - PAGE_MARGIN * 2 - headerHeight - footerHeight;
     const cellWidth = (contentWidth - (columns - 1) * cellGap) / columns;
     const cellHeight = contentHeight; // Full height - 1 row per page
 
     // 1 row per page
     const cellsPerPage = columns;
+
+    // Pre-calculate total pages
+    let totalPages = 0;
+    for (const screenshot of validScreenshots) {
+      const imgWidth = screenshot.width || 1920;
+      const imgHeight = screenshot.height || 1080;
+      const cellAspect = cellWidth / cellHeight;
+      const cellContentHeightPx = imgWidth / cellAspect;
+      const stepHeightPx = cellContentHeightPx * (1 - overlapRatio);
+      const totalSections = Math.max(1, Math.ceil((imgHeight - cellContentHeightPx * overlapRatio) / stepHeightPx));
+      totalPages += Math.ceil(totalSections / cellsPerPage);
+    }
+
+    // Pre-load favicons for all screenshots
+    const faviconCache = new Map();
+    for (const screenshot of validScreenshots) {
+      if (screenshot.favIconUrl && !faviconCache.has(screenshot.favIconUrl)) {
+        const dataUrl = await loadFaviconDataUrl(screenshot.favIconUrl);
+        faviconCache.set(screenshot.favIconUrl, dataUrl);
+      }
+    }
 
     let totalPageNum = 0;
     let isFirstPage = true;
@@ -301,11 +437,17 @@ async function generatePDF() {
     for (const screenshot of validScreenshots) {
       // Load image
       const img = await loadImage(screenshot.dataUrl);
+      const faviconDataUrl = faviconCache.get(screenshot.favIconUrl) || null;
 
       // Calculate sections - cell aspect ratio determines screenshot portion
       const cellAspect = cellWidth / cellHeight;
       const cellContentHeightPx = img.width / cellAspect;
-      const totalSections = Math.max(1, Math.ceil(img.height / cellContentHeightPx));
+
+      // Calculate step size (how much to advance per section, accounting for overlap)
+      const stepHeightPx = cellContentHeightPx * (1 - overlapRatio);
+
+      // Total number of sections needed (with overlap)
+      const totalSections = Math.max(1, Math.ceil((img.height - cellContentHeightPx * overlapRatio) / stepHeightPx));
 
       let sectionIndex = 0;
 
@@ -317,35 +459,64 @@ async function generatePDF() {
         isFirstPage = false;
         totalPageNum++;
 
-        let y = margin;
+        let y = PAGE_MARGIN;
 
         // Add header
         if (settings.showHeader) {
+          const faviconSize = 4; // mm
+          const faviconGap = 1.5; // mm between favicon and title
+          let titleX = PAGE_MARGIN;
+
+          // Draw favicon if available
+          if (faviconDataUrl) {
+            try {
+              pdf.addImage(faviconDataUrl, titleX, y + 1.5, faviconSize, faviconSize);
+              titleX += faviconSize + faviconGap;
+            } catch {
+              // Ignore favicon render errors
+            }
+          }
+
           pdf.setFontSize(9);
           pdf.setTextColor(30, 41, 59);
+          const maxTitleWidth = paperWidth - PAGE_MARGIN - titleX;
           const title = screenshot.title ? screenshot.title.substring(0, 70) : 'Untitled';
-          pdf.text(title, margin, y + 6);
+          pdf.text(title, titleX, y + 5, { maxWidth: maxTitleWidth });
 
           pdf.setFontSize(6);
           pdf.setTextColor(100, 116, 139);
           const url = screenshot.url ? screenshot.url.substring(0, 90) : '';
-          pdf.text(url, margin, y + 11);
+          pdf.text(url, PAGE_MARGIN, y + 10);
 
-          y += headerHeight;
+          // Draw border line below header
+          pdf.setDrawColor(226, 232, 240); // #e2e8f0
+          pdf.setLineWidth(0.1);
+          pdf.line(PAGE_MARGIN, y + HEADER_HEIGHT - 2, paperWidth - PAGE_MARGIN, y + HEADER_HEIGHT - 2);
+
+          // Move y position past header and spacing
+          y += HEADER_HEIGHT + CONTENT_SPACING;
         }
 
         // Add cells to page (1 row, multiple columns)
         for (let cellIndex = 0; cellIndex < cellsPerPage && sectionIndex < totalSections; cellIndex++) {
+          // Store current section number BEFORE processing
+          const currentSectionNum = sectionIndex + 1;
+
           const col = cellIndex; // Only 1 row, so cellIndex = column
 
-          const cellX = margin + col * (cellWidth + cellGap);
+          const cellX = PAGE_MARGIN + col * (cellWidth + cellGap);
           const cellY = y; // All cells on same row
 
-          // Calculate source rectangle for this section
-          const sourceY = Math.floor(sectionIndex * cellContentHeightPx);
+          // Calculate source rectangle for this section (with overlap)
+          const sourceY = Math.floor(sectionIndex * stepHeightPx);
           const sourceHeight = Math.min(cellContentHeightPx, img.height - sourceY);
 
           if (sourceHeight > 0) {
+            // Reserve space for section label (with spacing)
+            const labelSpacing = 2; // Space above label (mm)
+            const labelHeight = 3; // Space for label itself (mm)
+            const availableImageHeight = cellHeight - labelSpacing - labelHeight;
+
             // Create canvas for this section
             const canvas = document.createElement('canvas');
             canvas.width = img.width;
@@ -367,19 +538,27 @@ async function generatePDF() {
             // Calculate actual height to maintain aspect ratio
             const actualCellHeight = (sourceHeight / img.width) * cellWidth;
 
+            const imageHeight = Math.min(actualCellHeight, availableImageHeight);
+
             pdf.addImage(
               sectionDataUrl,
               'JPEG',
               cellX,
               cellY,
               cellWidth,
-              Math.min(actualCellHeight, cellHeight)
+              imageHeight
             );
 
             // Draw border
             pdf.setDrawColor(220, 220, 220);
             pdf.setLineWidth(0.2);
-            pdf.rect(cellX, cellY, cellWidth, Math.min(actualCellHeight, cellHeight));
+            pdf.rect(cellX, cellY, cellWidth, imageHeight);
+
+            // Add section number label below image with spacing
+            pdf.setFontSize(5);
+            pdf.setTextColor(100, 116, 139);
+            const sectionLabel = `[${currentSectionNum}/${totalSections}]`;
+            pdf.text(sectionLabel, cellX + cellWidth / 2, cellY + imageHeight + labelSpacing + 1.5, { align: 'center' });
           }
 
           sectionIndex++;
@@ -392,7 +571,14 @@ async function generatePDF() {
 
         // Add footer
         if (settings.showFooter) {
-          const footerY = A4_HEIGHT_MM - margin - 4;
+          // Draw border line above footer
+          const footerBorderY = paperHeight - PAGE_MARGIN - FOOTER_HEIGHT - CONTENT_SPACING + 2;
+          pdf.setDrawColor(226, 232, 240); // #e2e8f0
+          pdf.setLineWidth(0.1);
+          pdf.line(PAGE_MARGIN, footerBorderY, paperWidth - PAGE_MARGIN, footerBorderY);
+
+          // Footer starts after content + spacing, or at bottom - margin - footer height
+          const footerY = paperHeight - PAGE_MARGIN - FOOTER_HEIGHT + 4;
           pdf.setFontSize(6);
           pdf.setTextColor(148, 163, 184);
 
@@ -405,9 +591,9 @@ async function generatePDF() {
             minute: '2-digit',
           });
 
-          pdf.text(dateStr, margin, footerY);
-          pdf.text(`${totalPageNum}`, A4_WIDTH_MM / 2, footerY, { align: 'center' });
-          pdf.text('SitePrinter for Chrome', A4_WIDTH_MM - margin, footerY, { align: 'right' });
+          pdf.text(dateStr, PAGE_MARGIN, footerY);
+          pdf.text(`${totalPageNum} / ${totalPages}`, paperWidth / 2, footerY, { align: 'center' });
+          pdf.text('SitePrinter for Chrome', paperWidth - PAGE_MARGIN, footerY, { align: 'right' });
         }
       }
     }
@@ -434,6 +620,22 @@ function loadImage(src) {
     img.onerror = () => reject(new Error('画像の読み込みに失敗しました'));
     img.src = src;
   });
+}
+
+async function loadFaviconDataUrl(url) {
+  if (!url) return null;
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
 }
 
 function escapeHtml(text) {
