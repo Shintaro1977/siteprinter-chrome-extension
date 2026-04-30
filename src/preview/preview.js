@@ -52,10 +52,12 @@ const loadingOverlay = document.getElementById('loadingOverlay');
 const loadingText = document.getElementById('loadingText');
 const showHeaderCheckbox = document.getElementById('showHeader');
 const showFooterCheckbox = document.getElementById('showFooter');
+const upgradeBanner = document.getElementById('upgradeBanner');
 
 // State
 let screenshots = [];
 let capturedAt = '';
+let userPlan = 'free'; // 'free' | 'pro'
 let settings = {
   paperSize: 'a4',
   columns: 2,
@@ -87,10 +89,11 @@ async function init() {
   // Preload Japanese font
   loadJapaneseFont();
 
-  // Load screenshots from storage
-  const data = await chrome.storage.local.get(['screenshots', 'capturedAt']);
+  // Load user plan and screenshots from storage
+  const data = await chrome.storage.local.get(['screenshots', 'capturedAt', 'userPlan']);
   screenshots = data.screenshots || [];
   capturedAt = data.capturedAt || new Date().toISOString();
+  userPlan = data.userPlan || 'free';
 
   if (screenshots.length === 0) {
     previewContainer.innerHTML = `
@@ -129,6 +132,7 @@ function setupEventListeners() {
       btn.classList.add('active');
       settings.columns = parseInt(btn.dataset.columns, 10);
       renderPreview();
+      checkPlanRestrictions();
     });
   });
 
@@ -146,15 +150,33 @@ function setupEventListeners() {
   showHeaderCheckbox.addEventListener('change', () => {
     settings.showHeader = showHeaderCheckbox.checked;
     renderPreview();
+    checkPlanRestrictions();
   });
 
   showFooterCheckbox.addEventListener('change', () => {
     settings.showFooter = showFooterCheckbox.checked;
     renderPreview();
+    checkPlanRestrictions();
   });
 
   // Download button
   downloadBtn.addEventListener('click', generatePDF);
+
+  // Initial plan check
+  checkPlanRestrictions();
+}
+
+function checkPlanRestrictions() {
+  const isPro = userPlan === 'pro';
+  const usesProFeature = settings.columns > 1 || settings.showHeader || settings.showFooter;
+
+  if (!isPro && usesProFeature) {
+    downloadBtn.disabled = true;
+    upgradeBanner.classList.remove('hidden');
+  } else {
+    downloadBtn.disabled = false;
+    upgradeBanner.classList.add('hidden');
+  }
 }
 
 function renderScreenshotList() {

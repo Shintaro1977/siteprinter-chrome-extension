@@ -9,11 +9,48 @@
 <body>
   <div class="container">
     <header class="header">
-      <h1 class="logo">SitePrinter</h1>
-      <span class="badge">for Chrome</span>
+      <div class="header-top">
+        <h1 class="logo">SitePrinter</h1>
+        <span class="badge">for Chrome</span>
+      </div>
+      <!-- アカウント情報 -->
+      <div id="accountArea" class="account-area hidden">
+        <span id="accountEmail" class="account-email"></span>
+        <span id="planBadge" class="plan-badge plan-free">無料</span>
+        <button id="logoutBtn" class="logout-btn">ログアウト</button>
+      </div>
     </header>
 
-    <main class="main">
+    <!-- ログインビュー -->
+    <div id="loginView" class="login-view hidden">
+      <p class="login-desc">ログインするとプレビューできます</p>
+      <form id="loginForm" class="login-form">
+        <input type="email" id="emailInput" class="login-input" placeholder="メールアドレス" required>
+        <input type="password" id="passwordInput" class="login-input" placeholder="パスワード" required>
+        <p id="loginError" class="login-error hidden"></p>
+        <button type="submit" class="login-btn">ログイン</button>
+      </form>
+      <div class="login-links">
+        <button id="showSignupBtn" class="link-btn">アカウント作成</button>
+      </div>
+    </div>
+
+    <!-- サインアップビュー -->
+    <div id="signupView" class="login-view hidden">
+      <p class="login-desc">新規アカウントを作成</p>
+      <form id="signupForm" class="login-form">
+        <input type="email" id="signupEmailInput" class="login-input" placeholder="メールアドレス" required>
+        <input type="password" id="signupPasswordInput" class="login-input" placeholder="パスワード（6文字以上）" required>
+        <p id="signupError" class="login-error hidden"></p>
+        <button type="submit" class="login-btn">アカウントを作成</button>
+      </form>
+      <div class="login-links">
+        <button id="showLoginBtn" class="link-btn">ログインに戻る</button>
+      </div>
+    </div>
+
+    <!-- メインビュー -->
+    <main id="mainView" class="main hidden">
       <section class="capture-section">
         <h2 class="section-title">キャプチャ対象</h2>
 
