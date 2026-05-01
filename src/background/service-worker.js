@@ -1,5 +1,13 @@
 // Service Worker for SitePrinter Chrome Extension
 
+// Custom error for cancelled operations
+class CancelledError extends Error {
+  constructor(message = 'キャプチャがキャンセルされました') {
+    super(message);
+    this.name = 'CancelledError';
+  }
+}
+
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'captureScreenshots') {
@@ -37,6 +45,7 @@ class ProgressManager {
     this.isReady = false;
     this.readyPromise = null;
     this.readyResolve = null;
+    this.cancelled = false;
   }
 
   async open() {
@@ -147,16 +156,33 @@ class ProgressManager {
       error: error,
     }).catch(() => {});
   }
+
+  cancel() {
+    console.log('[ProgressManager] Capture cancelled by user');
+    this.cancelled = true;
+  }
+
+  isCancelled() {
+    return this.cancelled;
+  }
 }
 
 async function handleCaptureScreenshots(tabIds) {
   const screenshots = [];
+  let wasCancelled = false;
 
   for (const tabId of tabIds) {
     try {
       const screenshot = await captureFullPage(tabId);
       screenshots.push(screenshot);
     } catch (error) {
+      // Check if operation was cancelled
+      if (error instanceof CancelledError) {
+        console.log('[SitePrinter] Capture was cancelled by user');
+        wasCancelled = true;
+        break; // Stop processing remaining tabs
+      }
+
       console.error(`Failed to capture tab ${tabId}:`, error);
       screenshots.push({
         tabId,
@@ -168,18 +194,21 @@ async function handleCaptureScreenshots(tabIds) {
     }
   }
 
-  // Store screenshots data
-  await chrome.storage.local.set({
-    screenshots,
-    capturedAt: new Date().toISOString(),
-  });
+  // Only open preview if not cancelled
+  if (!wasCancelled) {
+    // Store screenshots data
+    await chrome.storage.local.set({
+      screenshots,
+      capturedAt: new Date().toISOString(),
+    });
 
-  // Open preview page
-  await chrome.tabs.create({
-    url: chrome.runtime.getURL('src/preview/preview.html'),
-  });
+    // Open preview page
+    await chrome.tabs.create({
+      url: chrome.runtime.getURL('src/preview/preview.html'),
+    });
+  }
 
-  return { success: true };
+  return { success: !wasCancelled };
 }
 
 async function captureFullPage(tabId) {
@@ -193,6 +222,15 @@ async function captureFullPage(tabId) {
   const progressManager = new ProgressManager();
   await progressManager.open();
   progressManager.sendTitle(tab.title || 'Untitled');
+
+  // Set up cancel listener
+  const cancelListener = (message, sender, sendResponse) => {
+    if (message.type === 'cancel') {
+      console.log('[SitePrinter] Received cancel request');
+      progressManager.cancel();
+    }
+  };
+  chrome.runtime.onMessage.addListener(cancelListener);
 
   // Ensure content script is loaded
   console.log('[SitePrinter] Ensuring content script is loaded...');
@@ -319,6 +357,12 @@ async function captureFullPage(tabId) {
     const MIN_CAPTURE_INTERVAL = 600; // Minimum 600ms between captures (for 2 calls/sec limit)
 
     for (let i = 0; i < sectionPositions.length; i++) {
+      // Check if cancelled
+      if (progressManager.isCancelled()) {
+        console.log('[SitePrinter] Capture cancelled, stopping...');
+        throw new CancelledError();
+      }
+
       const captureStartTime = Date.now();
       const scrollY = sectionPositions[i];
 
@@ -429,6 +473,9 @@ async function captureFullPage(tabId) {
     console.error('[SitePrinter] Capture error:', error);
     throw error;
   } finally {
+    // Remove cancel listener
+    chrome.runtime.onMessage.removeListener(cancelListener);
+
     // Close progress window
     await progressManager.close();
 

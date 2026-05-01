@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SitePrinter 設定</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="logo">SitePrinter</h1>
+          <span class="badge">extension</span>
+        </div>
+        <div class="header-right">
+          <span id="planBadge" class="plan-badge plan-free">無料</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ログイン前 -->
+    <div id="loginView" class="settings-container hidden">
+      <div class="settings-section">
+        <h2 class="section-title">アカウント</h2>
+        <div class="info-card">
+          <div class="auth-benefit">
+            <p class="benefit-text">ログインすると、Proプランへのアップグレードや今後追加される機能を利用できます</p>
+          </div>
+          <form id="loginForm" class="auth-form">
+            <div class="form-group">
+              <label for="emailInput" class="form-label">メールアドレス</label>
+              <input type="email" id="emailInput" class="form-input" placeholder="your@email.com" required>
+            </div>
+            <div class="form-group">
+              <label for="passwordInput" class="form-label">パスワード</label>
+              <input type="password" id="passwordInput" class="form-input" placeholder="パスワードを入力" required>
+            </div>
+            <p id="loginError" class="form-error hidden"></p>
+            <button type="submit" class="btn btn-primary">ログイン</button>
+          </form>
+          <div class="auth-links">
+            <span class="auth-link-text">アカウントをお持ちでない方は</span>
+            <button id="showSignupBtn" class="link-btn">アカウントを作成</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- サインアップ -->
+    <div id="signupView" class="settings-container hidden">
+      <div class="settings-section">
+        <h2 class="section-title">アカウント作成</h2>
+        <div class="info-card">
+          <div class="auth-benefit">
+            <p class="benefit-text">アカウントを作成して、Proプランにアップグレードしましょう</p>
+          </div>
+          <form id="signupForm" class="auth-form">
+            <div class="form-group">
+              <label for="signupEmailInput" class="form-label">メールアドレス</label>
+              <input type="email" id="signupEmailInput" class="form-input" placeholder="your@email.com" required>
+            </div>
+            <div class="form-group">
+              <label for="signupPasswordInput" class="form-label">パスワード</label>
+              <input type="password" id="signupPasswordInput" class="form-input" placeholder="6文字以上のパスワード" required>
+            </div>
+            <p id="signupError" class="form-error hidden"></p>
+            <button type="submit" class="btn btn-primary">アカウントを作成</button>
+          </form>
+          <div class="auth-links">
+            <span class="auth-link-text">既にアカウントをお持ちの方は</span>
+            <button id="showLoginBtn" class="link-btn">ログイン</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF設定（常に表示） -->
+    <div class="settings-container">
+      <div class="settings-section">
+        <h2 class="section-title">PDF設定</h2>
+        <div class="info-card">
+          <div class="setting-group">
+            <label class="setting-label">画像形式</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="imageFormat" value="png" checked>
+                <div class="radio-content">
+                  <span class="radio-title">🖼️ PNG（高画質）</span>
+                </div>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="imageFormat" value="jpeg">
+                <div class="radio-content">
+                  <span class="radio-title">⚡ JPEG（軽量）</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ログイン後 -->
+    <main id="mainView" class="main hidden">
+      <div class="settings-section">
+        <h2 class="section-title">アカウント情報</h2>
+        <div class="info-card">
+          <div class="info-row">
+            <span class="info-label">メールアドレス</span>
+            <span id="accountEmail" class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">プラン</span>
+            <div class="info-value">
+              <span id="accountPlanBadge" class="plan-badge plan-free">無料</span>
+              <button id="upgradeBtn" class="btn-link hidden">Proにアップグレード</button>
+            </div>
+          </div>
+        </div>
+        <button id="logoutBtn" class="btn btn-secondary">ログアウト</button>
+      </div>
+
+      <div class="settings-section">
+        <h2 class="section-title">情報</h2>
+        <div class="info-card">
+          <div class="info-row">
+            <span class="info-label">バージョン</span>
+            <span id="versionText" class="info-value">1.0.0</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Webサイト</span>
+            <a href="https://siteprinter.jp" target="_blank" class="info-link">siteprinter.jp</a>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast hidden">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    <span id="toastMessage">設定を保存しました</span>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

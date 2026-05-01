@@ -52,7 +52,10 @@ const loadingOverlay = document.getElementById('loadingOverlay');
 const loadingText = document.getElementById('loadingText');
 const showHeaderCheckbox = document.getElementById('showHeader');
 const showFooterCheckbox = document.getElementById('showFooter');
-const upgradeBanner = document.getElementById('upgradeBanner');
+const showBorderCheckbox = document.getElementById('showBorder');
+const upgradeModal = document.getElementById('upgradeModal');
+const upgradeModalBtn = document.getElementById('upgradeModalBtn');
+const cancelModalBtn = document.getElementById('cancelModalBtn');
 
 // State
 let screenshots = [];
@@ -60,10 +63,12 @@ let capturedAt = '';
 let userPlan = 'free'; // 'free' | 'pro'
 let settings = {
   paperSize: 'a4',
-  columns: 2,
-  overlap: 'none',
-  showHeader: true,
-  showFooter: true,
+  columns: 1,
+  overlap: 'medium',
+  showHeader: false,
+  showFooter: false,
+  showBorder: true,
+  imageFormat: 'png', // 'png' | 'jpeg'
 };
 
 // Constants
@@ -77,9 +82,9 @@ const HEADER_HEIGHT = 15; // Header height in mm
 const FOOTER_HEIGHT = 8; // Footer height in mm
 const CONTENT_SPACING = 2.5; // Spacing between header/footer and content in mm
 const OVERLAP_SIZES = {
-  none: 0,      // No overlap
-  small: 0.03,  // 3% overlap
-  large: 0.05,  // 5% overlap
+  small: 0.02,   // 2% overlap - 小
+  medium: 0.05,  // 5% overlap - 中
+  large: 0.08,   // 8% overlap - 大
 };
 
 // Initialize
@@ -90,10 +95,18 @@ async function init() {
   loadJapaneseFont();
 
   // Load user plan and screenshots from storage
-  const data = await chrome.storage.local.get(['screenshots', 'capturedAt', 'userPlan']);
+  const data = await chrome.storage.local.get(['screenshots', 'capturedAt', 'userPlan', 'imageFormat']);
   screenshots = data.screenshots || [];
   capturedAt = data.capturedAt || new Date().toISOString();
   userPlan = data.userPlan || 'free';
+  settings.imageFormat = data.imageFormat || 'png';
+
+  // Set default settings based on plan
+  if (userPlan === 'pro') {
+    settings.columns = 2;
+    settings.showHeader = true;
+    settings.showFooter = true;
+  }
 
   if (screenshots.length === 0) {
     previewContainer.innerHTML = `
@@ -110,8 +123,45 @@ async function init() {
   // Set up event listeners
   setupEventListeners();
 
+  // Set UI controls to match current settings
+  initializeUIControls();
+
   // Initial render
   renderPreview();
+}
+
+function initializeUIControls() {
+  // Set active state for paper size buttons
+  document.querySelectorAll('.paper-size-btn').forEach((btn) => {
+    if (btn.dataset.paperSize === settings.paperSize) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Set active state for column buttons
+  document.querySelectorAll('.column-btn').forEach((btn) => {
+    if (parseInt(btn.dataset.columns, 10) === settings.columns) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Set active state for overlap buttons
+  document.querySelectorAll('.overlap-btn').forEach((btn) => {
+    if (btn.dataset.overlap === settings.overlap) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Set checkbox states
+  showHeaderCheckbox.checked = settings.showHeader;
+  showFooterCheckbox.checked = settings.showFooter;
+  showBorderCheckbox.checked = settings.showBorder;
 }
 
 function setupEventListeners() {
@@ -122,6 +172,7 @@ function setupEventListeners() {
       btn.classList.add('active');
       settings.paperSize = btn.dataset.paperSize;
       renderPreview();
+      checkPlanRestrictions();
     });
   });
 
@@ -143,6 +194,7 @@ function setupEventListeners() {
       btn.classList.add('active');
       settings.overlap = btn.dataset.overlap;
       renderPreview();
+      checkPlanRestrictions();
     });
   });
 
@@ -159,23 +211,81 @@ function setupEventListeners() {
     checkPlanRestrictions();
   });
 
+  showBorderCheckbox.addEventListener('change', () => {
+    settings.showBorder = showBorderCheckbox.checked;
+    renderPreview();
+  });
+
   // Download button
-  downloadBtn.addEventListener('click', generatePDF);
+  downloadBtn.addEventListener('click', handleDownloadClick);
+
+  // Modal buttons
+  upgradeModalBtn.addEventListener('click', () => {
+    // Open settings page to upgrade
+    chrome.tabs.create({ url: chrome.runtime.getURL('src/options/options.html') });
+  });
+
+  cancelModalBtn.addEventListener('click', () => {
+    upgradeModal.classList.add('hidden');
+  });
+
+  // Modal backdrop click to close
+  upgradeModal.querySelector('.modal-backdrop').addEventListener('click', () => {
+    upgradeModal.classList.add('hidden');
+  });
 
   // Initial plan check
   checkPlanRestrictions();
 }
 
+function handleDownloadClick() {
+  const isPro = userPlan === 'pro';
+  const usingDefaultSettings = isUsingDefaultSettings();
+
+  // Check if user can download
+  if (isPro || usingDefaultSettings) {
+    // Allowed - generate PDF
+    generatePDF();
+  } else {
+    // Not allowed - show upgrade modal
+    upgradeModal.classList.remove('hidden');
+  }
+}
+
+function isUsingDefaultSettings() {
+  return (
+    settings.paperSize === 'a4' &&
+    settings.columns === 1 &&
+    settings.showHeader === false &&
+    settings.showFooter === false
+  );
+}
+
 function checkPlanRestrictions() {
   const isPro = userPlan === 'pro';
-  const usesProFeature = settings.columns > 1 || settings.showHeader || settings.showFooter;
+  const usingDefaultSettings = isUsingDefaultSettings();
 
-  if (!isPro && usesProFeature) {
-    downloadBtn.disabled = true;
-    upgradeBanner.classList.remove('hidden');
-  } else {
+  // Allow download if Pro user OR using default (free) settings
+  if (isPro || usingDefaultSettings) {
+    // Show download button
+    downloadBtn.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      PDFをダウンロード
+    `;
+    downloadBtn.classList.remove('btn-upgrade');
     downloadBtn.disabled = false;
-    upgradeBanner.classList.add('hidden');
+  } else {
+    // Show upgrade button
+    downloadBtn.innerHTML = `
+      <span style="font-size: 16px; margin-right: 4px;">✦</span>
+      Proプランにアップグレード
+    `;
+    downloadBtn.classList.add('btn-upgrade');
+    downloadBtn.disabled = false; // Keep button enabled to show modal
   }
 }
 
@@ -348,9 +458,12 @@ function renderFooter(pageNum, totalPages) {
 
   return `
     <div class="preview-page-footer">
-      <span>${dateStr}</span>
+      <span>取得日時: ${dateStr}</span>
       <span>${pageNum} / ${totalPages}</span>
-      <span>SitePrinter for Chrome</span>
+      <div class="footer-right">
+        <div>実際の画面表示とは異なる場合があります</div>
+        <div>Generated by SitePrinter extension</div>
+      </div>
     </div>
   `;
 }
@@ -358,6 +471,7 @@ function renderFooter(pageNum, totalPages) {
 function renderCell(cell) {
   const translateY = cell.yOffsetPercent;
   const sectionLabel = `[${cell.sectionIndex + 1}/${cell.totalSections}]`;
+  const borderStyle = settings.showBorder ? 'border: 1px solid #e2e8f0;' : 'border: none;';
 
   // For the last section, use padding-bottom trick for exact sizing
   if (cell.isLastSection && cell.actualHeightPercent < 100) {
@@ -365,7 +479,7 @@ function renderCell(cell) {
 
     return `
       <div class="preview-image-cell preview-image-cell--last">
-        <div style="position: relative; width: 100%; padding-bottom: ${paddingBottom}%; overflow: hidden; background: #ffffff; border: 1px solid #e2e8f0;">
+        <div style="position: relative; width: 100%; padding-bottom: ${paddingBottom}%; overflow: hidden; background: #ffffff; ${borderStyle}">
           <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden;">
             <img src="${cell.screenshot.dataUrl}" alt=""
                  style="width: 100%; transform: translateY(-${translateY}%); transform-origin: top left;">
@@ -378,7 +492,7 @@ function renderCell(cell) {
 
   return `
     <div class="preview-image-cell">
-      <div class="preview-image-wrapper">
+      <div class="preview-image-wrapper" style="${borderStyle}">
         <img src="${cell.screenshot.dataUrl}" alt=""
              style="width: 100%; transform: translateY(-${translateY}%); transform-origin: top left;">
       </div>
@@ -554,8 +668,11 @@ async function generatePDF() {
               0, 0, img.width, sourceHeight
             );
 
-            // Convert to data URL and add to PDF
-            const sectionDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            // Convert to data URL based on selected format
+            const imageFormatUpper = settings.imageFormat.toUpperCase();
+            const quality = settings.imageFormat === 'jpeg' ? 0.85 : undefined;
+            const mimeType = settings.imageFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
+            const sectionDataUrl = canvas.toDataURL(mimeType, quality);
 
             // Calculate actual height to maintain aspect ratio
             const actualCellHeight = (sourceHeight / img.width) * cellWidth;
@@ -564,17 +681,19 @@ async function generatePDF() {
 
             pdf.addImage(
               sectionDataUrl,
-              'JPEG',
+              imageFormatUpper,
               cellX,
               cellY,
               cellWidth,
               imageHeight
             );
 
-            // Draw border
-            pdf.setDrawColor(220, 220, 220);
-            pdf.setLineWidth(0.2);
-            pdf.rect(cellX, cellY, cellWidth, imageHeight);
+            // Draw border if enabled
+            if (settings.showBorder) {
+              pdf.setDrawColor(220, 220, 220);
+              pdf.setLineWidth(0.2);
+              pdf.rect(cellX, cellY, cellWidth, imageHeight);
+            }
 
             // Add section number label below image with spacing
             pdf.setFontSize(5);
@@ -613,9 +732,13 @@ async function generatePDF() {
             minute: '2-digit',
           });
 
-          pdf.text(dateStr, PAGE_MARGIN, footerY);
+          pdf.text(`取得日時: ${dateStr}`, PAGE_MARGIN, footerY);
           pdf.text(`${totalPageNum} / ${totalPages}`, paperWidth / 2, footerY, { align: 'center' });
-          pdf.text('SitePrinter for Chrome', paperWidth - PAGE_MARGIN, footerY, { align: 'right' });
+
+          // Right side - two lines
+          pdf.setFontSize(5);
+          pdf.text('実際の画面表示とは異なる場合があります', paperWidth - PAGE_MARGIN, footerY - 1, { align: 'right' });
+          pdf.text('Generated by SitePrinter extension', paperWidth - PAGE_MARGIN, footerY + 1.5, { align: 'right' });
         }
       }
     }

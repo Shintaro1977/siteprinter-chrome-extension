@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "SitePrinter for Chrome",
+  "name": "SitePrinter extension",
   "version": "1.0.0",
   "description": "ページ全体のスクリーンショットを取得し、A4サイズのPDFとして出力します",
   "icons": {
@@ -14,8 +14,9 @@
       "16": "assets/icons/icon16.png",
       "48": "assets/icons/icon48.png"
     },
-    "default_title": "SitePrinter for Chrome"
+    "default_title": "SitePrinter extension"
   },
+  "options_page": "src/options/options.html",
   "permissions": [
     "activeTab",
     "tabs",

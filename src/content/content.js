@@ -19,6 +19,81 @@ class CaptureController {
       hoverDisable: [],
     };
     this.originalScrollPosition = { x: 0, y: 0 };
+    this.scrollableElement = null;
+  }
+
+  /**
+   * Find scrollable element for SPA sites like ChatGPT, Facebook, etc.
+   */
+  findScrollableElement() {
+    const url = window.location.href;
+
+    // ChatGPT / Gemini detection
+    if (/chatgpt\.com/i.test(url) || /gemini\.google\.com/i.test(url)) {
+      const walker = document.createTreeWalker(
+        document.documentElement,
+        NodeFilter.SHOW_ELEMENT
+      );
+
+      let candidates = [];
+      let node;
+
+      while ((node = walker.nextNode())) {
+        if (node.clientWidth > 0 && node.clientHeight > 0 &&
+            node.scrollWidth > 0 && node.scrollHeight > 0 &&
+            (node.scrollWidth > node.clientWidth || node.scrollHeight > node.clientHeight)) {
+
+          const style = window.getComputedStyle(node);
+          const isScrollable = ['scroll', 'auto', 'overlay'].includes(style.overflow) ||
+                             ['scroll', 'auto', 'overlay'].includes(style.overflowY) ||
+                             ['scroll', 'auto', 'overlay'].includes(style.overflowX);
+
+          if (isScrollable && node.clientWidth <= window.innerWidth + 20 &&
+              node.clientHeight <= window.innerHeight + 20 &&
+              (node.scrollWidth > document.documentElement.scrollWidth * 0.7 ||
+               node.scrollHeight > document.documentElement.scrollHeight * 0.5)) {
+            // Calculate scroll area
+            const scrollArea = node.scrollWidth * node.scrollHeight;
+            candidates.push({ node, scrollArea });
+          }
+        }
+      }
+
+      // Select the element with the largest scroll area (main content)
+      if (candidates.length > 0) {
+        candidates.sort((a, b) => b.scrollArea - a.scrollArea);
+        console.log('[Content] Found scrollable element:', candidates[0].node);
+        return candidates[0].node;
+      }
+    }
+
+    // Facebook detection
+    if (/\.(facebook|fb)\.com/i.test(url)) {
+      const walker = document.createTreeWalker(
+        document.documentElement,
+        NodeFilter.SHOW_ELEMENT
+      );
+
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.clientWidth > 0 && node.clientHeight > 0 &&
+            node.scrollWidth > 0 && node.scrollHeight > 0 &&
+            node.scrollHeight > node.clientHeight) {
+
+          const style = window.getComputedStyle(node);
+          const isScrollable = ['scroll', 'auto', 'overlay'].includes(style.overflow) ||
+                             ['scroll', 'auto', 'overlay'].includes(style.overflowY);
+
+          if (isScrollable && node.clientWidth > window.innerWidth * 0.5 &&
+              node.clientHeight > window.innerHeight * 0.7) {
+            console.log('[Content] Found scrollable element:', node);
+            return node;
+          }
+        }
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -26,11 +101,21 @@ class CaptureController {
    */
   init() {
     try {
+      // Find scrollable element for SPA sites
+      this.scrollableElement = this.findScrollableElement();
+
       // Save original scroll position
       this.originalScrollPosition = {
         x: window.scrollX,
         y: window.scrollY,
       };
+
+      // If scrollable element found, save its scroll position too
+      if (this.scrollableElement) {
+        this.originalScrollPosition.elementX = this.scrollableElement.scrollLeft;
+        this.originalScrollPosition.elementY = this.scrollableElement.scrollTop;
+        console.log('[Content] Using scrollable element for capture');
+      }
 
       // Disable animations
       this.disableAnimations();
@@ -50,12 +135,15 @@ class CaptureController {
       this.hideScrollbars();
 
       console.log('[Content] Page initialized for capture');
+
+      // Return dimensions based on scrollable element or document
+      const scrollElement = this.scrollableElement || document.documentElement;
       return {
         success: true,
-        scrollHeight: document.documentElement.scrollHeight,
-        scrollWidth: document.documentElement.scrollWidth,
-        clientHeight: document.documentElement.clientHeight,
-        clientWidth: document.documentElement.clientWidth,
+        scrollHeight: scrollElement.scrollHeight,
+        scrollWidth: scrollElement.scrollWidth,
+        clientHeight: scrollElement.clientHeight || document.documentElement.clientHeight,
+        clientWidth: scrollElement.clientWidth || document.documentElement.clientWidth,
       };
     } catch (error) {
       console.error('[Content] Init error:', error);
@@ -196,27 +284,55 @@ class CaptureController {
    */
   scrollTo(x, y) {
     try {
-      window.scrollTo(x, y);
+      const scrollElement = this.scrollableElement;
 
-      // Wait for scroll to complete
-      return new Promise((resolve) => {
-        // Check if scroll position matches target
-        const checkScroll = () => {
-          if (Math.abs(window.scrollY - y) < 1 && Math.abs(window.scrollX - x) < 1) {
+      if (scrollElement) {
+        // Scroll the scrollable element
+        scrollElement.scrollTo(x, y);
+
+        // Wait for scroll to complete
+        return new Promise((resolve) => {
+          // Check if scroll position matches target
+          const checkScroll = () => {
+            if (Math.abs(scrollElement.scrollTop - y) < 1 && Math.abs(scrollElement.scrollLeft - x) < 1) {
+              resolve({ success: true, x: scrollElement.scrollLeft, y: scrollElement.scrollTop });
+            } else {
+              requestAnimationFrame(checkScroll);
+            }
+          };
+
+          // Start checking after a short delay
+          setTimeout(checkScroll, 50);
+
+          // Timeout after 500ms
+          setTimeout(() => {
+            resolve({ success: true, x: scrollElement.scrollLeft, y: scrollElement.scrollTop });
+          }, 500);
+        });
+      } else {
+        // Default to window scroll
+        window.scrollTo(x, y);
+
+        // Wait for scroll to complete
+        return new Promise((resolve) => {
+          // Check if scroll position matches target
+          const checkScroll = () => {
+            if (Math.abs(window.scrollY - y) < 1 && Math.abs(window.scrollX - x) < 1) {
+              resolve({ success: true, x: window.scrollX, y: window.scrollY });
+            } else {
+              requestAnimationFrame(checkScroll);
+            }
+          };
+
+          // Start checking after a short delay
+          setTimeout(checkScroll, 50);
+
+          // Timeout after 500ms
+          setTimeout(() => {
             resolve({ success: true, x: window.scrollX, y: window.scrollY });
-          } else {
-            requestAnimationFrame(checkScroll);
-          }
-        };
-
-        // Start checking after a short delay
-        setTimeout(checkScroll, 50);
-
-        // Timeout after 500ms
-        setTimeout(() => {
-          resolve({ success: true, x: window.scrollX, y: window.scrollY });
-        }, 500);
-      });
+          }, 500);
+        });
+      }
     } catch (error) {
       console.error('[Content] Scroll error:', error);
       return Promise.resolve({ success: false, error: error.message });
@@ -282,6 +398,12 @@ class CaptureController {
       });
 
       // Restore scroll position
+      if (this.scrollableElement) {
+        this.scrollableElement.scrollTo(
+          this.originalScrollPosition.elementX || 0,
+          this.originalScrollPosition.elementY || 0
+        );
+      }
       window.scrollTo(this.originalScrollPosition.x, this.originalScrollPosition.y);
 
       // Clear stored styles

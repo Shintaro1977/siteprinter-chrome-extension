@@ -3,54 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SitePrinter for Chrome</title>
+  <title>SitePrinter extension</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div class="container">
     <header class="header">
       <div class="header-top">
-        <h1 class="logo">SitePrinter</h1>
-        <span class="badge">for Chrome</span>
-      </div>
-      <!-- アカウント情報 -->
-      <div id="accountArea" class="account-area hidden">
-        <span id="accountEmail" class="account-email"></span>
-        <span id="planBadge" class="plan-badge plan-free">無料</span>
-        <button id="logoutBtn" class="logout-btn">ログアウト</button>
+        <div class="header-left">
+          <h1 class="logo">SitePrinter</h1>
+          <span class="badge">extension</span>
+        </div>
+        <div class="header-right">
+          <span id="planBadge" class="plan-badge plan-free">無料</span>
+          <button id="settingsBtn" class="settings-btn" title="設定">
+            <svg width="18" height="18" viewBox="0 0 512 512" fill="currentColor">
+              <path d="M499.453,210.004l-55.851-2.58c-5.102-0.23-9.608-3.395-11.546-8.103l-11.508-27.695c-1.937-4.728-0.997-10.145,2.455-13.914l37.668-41.332c4.718-5.188,4.546-13.205-0.421-18.182l-46.434-46.443c-4.986-4.967-13.003-5.159-18.2-0.412l-41.312,37.668c-3.778,3.443-9.206,4.402-13.924,2.436l-27.694-11.488c-4.718-1.946-7.864-6.454-8.094-11.565l-2.589-55.831C301.675,5.534,295.883,0,288.864,0h-65.708c-7.02,0-12.831,5.534-13.156,12.562l-2.571,55.831c-0.23,5.111-3.376,9.618-8.094,11.565L171.64,91.447c-4.737,1.966-10.165,1.007-13.924-2.436l-41.331-37.668c-5.198-4.746-13.215-4.564-18.201,0.412L51.769,98.198c-4.986,4.977-5.158,12.994-0.422,18.182l37.668,41.332c3.452,3.769,4.373,9.186,2.416,13.914l-11.469,27.695c-1.956,4.708-6.444,7.873-11.564,8.103l-55.832,2.58c-7.019,0.316-12.562,6.118-12.562,13.147v65.699c0,7.019,5.543,12.83,12.562,13.148l55.832,2.579c5.12,0.229,9.608,3.394,11.564,8.103l11.469,27.694c1.957,4.728,1.036,10.146-2.416,13.914l-37.668,41.313c-4.756,5.217-4.564,13.224,0.403,18.201l46.471,46.443c4.967,4.977,12.965,5.15,18.182,0.422l41.312-37.677c3.759-3.443,9.207-4.392,13.924-2.435l27.694,11.478c4.719,1.956,7.864,6.464,8.094,11.575l2.571,55.831c0.325,7.02,6.136,12.562,13.156,12.562h65.708c7.02,0,12.812-5.542,13.138-12.562l2.589-55.831c0.23-5.111,3.376-9.619,8.094-11.575l27.694-11.478c4.718-1.957,10.146-1.008,13.924,2.435l41.312,37.677c5.198,4.728,13.215,4.555,18.2-0.422l46.434-46.443c4.967-4.977,5.139-12.984,0.421-18.201l-37.668-41.313c-3.452-3.768-4.412-9.186-2.455-13.914l11.508-27.694c1.937-4.709,6.444-7.874,11.546-8.103l55.851-2.579c7.019-0.318,12.542-6.129,12.542-13.148v-65.699C511.995,216.122,506.472,210.32,499.453,210.004z M256.01,339.618c-46.164,0-83.622-37.438-83.622-83.612c0-46.184,37.458-83.622,83.622-83.622s83.602,37.438,83.602,83.622C339.612,302.179,302.174,339.618,256.01,339.618z"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </header>
 
-    <!-- ログインビュー -->
-    <div id="loginView" class="login-view hidden">
-      <p class="login-desc">ログインするとプレビューできます</p>
-      <form id="loginForm" class="login-form">
-        <input type="email" id="emailInput" class="login-input" placeholder="メールアドレス" required>
-        <input type="password" id="passwordInput" class="login-input" placeholder="パスワード" required>
-        <p id="loginError" class="login-error hidden"></p>
-        <button type="submit" class="login-btn">ログイン</button>
-      </form>
-      <div class="login-links">
-        <button id="showSignupBtn" class="link-btn">アカウント作成</button>
-      </div>
-    </div>
-
-    <!-- サインアップビュー -->
-    <div id="signupView" class="login-view hidden">
-      <p class="login-desc">新規アカウントを作成</p>
-      <form id="signupForm" class="login-form">
-        <input type="email" id="signupEmailInput" class="login-input" placeholder="メールアドレス" required>
-        <input type="password" id="signupPasswordInput" class="login-input" placeholder="パスワード（6文字以上）" required>
-        <p id="signupError" class="login-error hidden"></p>
-        <button type="submit" class="login-btn">アカウントを作成</button>
-      </form>
-      <div class="login-links">
-        <button id="showLoginBtn" class="link-btn">ログインに戻る</button>
-      </div>
-    </div>
-
     <!-- メインビュー -->
-    <main id="mainView" class="main hidden">
+    <main id="mainView" class="main">
       <section class="capture-section">
         <h2 class="section-title">キャプチャ対象</h2>
 

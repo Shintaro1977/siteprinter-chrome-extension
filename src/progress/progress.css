@@ -39,7 +39,27 @@ body {
 
 /* Progress Section */
 #capturing {
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+/* Warning Message */
+.warning-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 6px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #92400e;
+}
+
+.warning-message svg {
+  flex-shrink: 0;
+  stroke: #f59e0b;
 }
 
 #progressAndButton {
@@ -76,6 +96,41 @@ body {
   min-width: 45px;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* Button Container */
+#buttonContainer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+/* Cancel Button */
+.cancel-btn {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  color: #ef4444;
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.cancel-btn:active {
+  transform: scale(0.98);
+}
+
+.cancel-btn.hidden {
+  display: none;
 }
 
 /* Processing Label */

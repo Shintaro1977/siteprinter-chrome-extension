@@ -12,16 +12,9 @@
     <header class="app-header">
       <div class="header-left">
         <h1 class="logo">SitePrinter</h1>
-        <span class="badge">for Chrome</span>
+        <span class="badge">extension</span>
       </div>
       <div class="header-right">
-        <div id="upgradeBanner" class="upgrade-banner hidden">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-          </svg>
-          <span>Pro機能を使用中</span>
-          <a href="https://app.siteprinter.jp/upgrade" target="_blank" class="upgrade-link">アップグレード</a>
-        </div>
         <button id="downloadBtn" class="btn btn-primary">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -54,14 +47,6 @@
         <div class="settings-header">
           <h2 class="settings-title">設定</h2>
         </div>
-        <div class="settings-notice">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-          </svg>
-          <span>プレビューと実際のPDFは完全に同一ではない場合があります</span>
-        </div>
         <div class="settings-content">
           <!-- Layout Settings -->
           <section class="settings-section">
@@ -78,8 +63,8 @@
             <div class="setting-item">
               <label class="setting-label">列数</label>
               <div class="column-selector">
-                <button class="column-btn" data-columns="1">1列</button>
-                <button class="column-btn active" data-columns="2">2列</button>
+                <button class="column-btn active" data-columns="1">1列</button>
+                <button class="column-btn" data-columns="2">2列</button>
                 <button class="column-btn" data-columns="3">3列</button>
                 <button class="column-btn" data-columns="4">4列</button>
               </div>
@@ -88,11 +73,19 @@
             <div class="setting-item">
               <label class="setting-label">重複エリア</label>
               <div class="overlap-selector">
-                <button class="overlap-btn active" data-overlap="none">なし</button>
-                <button class="overlap-btn" data-overlap="small">少し</button>
-                <button class="overlap-btn" data-overlap="large">多め</button>
+                <button class="overlap-btn" data-overlap="small">小</button>
+                <button class="overlap-btn active" data-overlap="medium">中</button>
+                <button class="overlap-btn" data-overlap="large">大</button>
               </div>
-              <p class="setting-description">セクション間の重なり量</p>
+              <p class="setting-description">セクション間の重なり量（2% / 5% / 8%）</p>
+            </div>
+
+            <div class="setting-item">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showBorder" checked>
+                <span>境界線を表示</span>
+              </label>
+              <p class="setting-description">セクションの境界線を表示</p>
             </div>
           </section>
 
@@ -102,7 +95,7 @@
 
             <div class="setting-item">
               <label class="checkbox-label">
-                <input type="checkbox" id="showHeader" checked>
+                <input type="checkbox" id="showHeader">
                 <span>ヘッダーを表示</span>
               </label>
               <p class="setting-description">ページタイトルとURLを表示</p>
@@ -110,7 +103,7 @@
 
             <div class="setting-item">
               <label class="checkbox-label">
-                <input type="checkbox" id="showFooter" checked>
+                <input type="checkbox" id="showFooter">
                 <span>フッターを表示</span>
               </label>
               <p class="setting-description">日時・ページ番号・ロゴを表示</p>
@@ -124,9 +117,60 @@
               <!-- Populated by JS -->
             </div>
           </section>
+
+          <!-- Notice -->
+          <div class="settings-notice">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span>プレビューと実際のPDFは完全に同一ではない場合があります</span>
+          </div>
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Upgrade Modal -->
+  <div id="upgradeModal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <div style="font-size: 48px; color: #f59e0b; margin-bottom: 16px;">✦</div>
+        <h3>Pro機能が必要です</h3>
+        <p>カスタム設定を使用したPDF生成はProプランでご利用いただけます。</p>
+      </div>
+      <div class="modal-body">
+        <div class="feature-list">
+          <div class="feature-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>自由な列数設定（2〜4列）</span>
+          </div>
+          <div class="feature-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>ヘッダー・フッターのカスタマイズ</span>
+          </div>
+          <div class="feature-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>A3用紙サイズ対応</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="upgradeModalBtn" class="btn btn-primary">
+          <span style="font-size: 16px; margin-right: 4px;">✦</span>
+          <span>Proプランにアップグレード</span>
+        </button>
+        <button id="cancelModalBtn" class="btn btn-secondary">キャンセル</button>
+      </div>
+    </div>
   </div>
 
   <!-- Loading Overlay -->

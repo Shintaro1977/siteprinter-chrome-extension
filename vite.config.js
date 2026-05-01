@@ -10,6 +10,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         popup: resolve(__dirname, 'src/popup/popup.html'),
+        options: resolve(__dirname, 'src/options/options.html'),
         preview: resolve(__dirname, 'src/preview/preview.html'),
         progress: resolve(__dirname, 'src/progress/progress.html'),
         'service-worker': resolve(__dirname, 'src/background/service-worker.js'),

@@ -6,12 +6,19 @@ class ProgressController {
     this.progressPercent = document.getElementById('progressPercent');
     this.processingLabel = document.getElementById('processingLabel');
     this.pageTitle = document.getElementById('pageTitle');
+    this.cancelBtn = document.getElementById('cancelBtn');
 
     this.setupMessageListener();
+    this.setupCancelButton();
   }
 
   setupMessageListener() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      // Ignore messages without a type property
+      if (!message || !message.type) {
+        return;
+      }
+
       console.log('[Progress] Received message:', message);
       switch (message.type) {
         case 'title':
@@ -40,6 +47,21 @@ class ProgressController {
     });
   }
 
+  setupCancelButton() {
+    this.cancelBtn.addEventListener('click', () => {
+      console.log('[Progress] Cancel button clicked');
+
+      // Disable button to prevent multiple clicks
+      this.cancelBtn.disabled = true;
+      this.cancelBtn.textContent = 'キャンセル中...';
+
+      // Send cancel message to service worker
+      chrome.runtime.sendMessage({ type: 'cancel' }).catch((error) => {
+        console.error('[Progress] Failed to send cancel message:', error);
+      });
+    });
+  }
+
   updateTitle(title) {
     this.pageTitle.textContent = title;
     this.pageTitle.title = title; // tooltip shows full title on hover
@@ -63,6 +85,9 @@ class ProgressController {
     this.progressBar.style.width = '100%';
     this.progressPercent.textContent = '100%';
 
+    // Hide cancel button
+    this.cancelBtn.classList.add('hidden');
+
     // Show processing label
     this.processingLabel.classList.remove('hidden');
 
@@ -71,6 +96,9 @@ class ProgressController {
 
   handleComplete() {
     console.log('[Progress] Complete, closing window...');
+
+    // Hide cancel button
+    this.cancelBtn.classList.add('hidden');
 
     // Window will be closed by service worker
     // Just show completion state briefly
@@ -83,6 +111,9 @@ class ProgressController {
 
   showError(error) {
     console.error('[Progress] Error:', error);
+
+    // Hide cancel button
+    this.cancelBtn.classList.add('hidden');
 
     // Show error in the UI
     this.processingLabel.textContent = `Error: ${error}`;

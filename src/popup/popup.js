@@ -1,19 +1,7 @@
-import { supabase } from '../lib/supabase.js';
-
 // DOM Elements
-const accountArea = document.getElementById('accountArea');
-const accountEmail = document.getElementById('accountEmail');
 const planBadge = document.getElementById('planBadge');
-const logoutBtn = document.getElementById('logoutBtn');
-const loginView = document.getElementById('loginView');
-const signupView = document.getElementById('signupView');
+const settingsBtn = document.getElementById('settingsBtn');
 const mainView = document.getElementById('mainView');
-const loginForm = document.getElementById('loginForm');
-const signupForm = document.getElementById('signupForm');
-const loginError = document.getElementById('loginError');
-const signupError = document.getElementById('signupError');
-const showSignupBtn = document.getElementById('showSignupBtn');
-const showLoginBtn = document.getElementById('showLoginBtn');
 const captureModeRadios = document.querySelectorAll('input[name="captureMode"]');
 const tabListContainer = document.getElementById('tabList');
 const captureBtn = document.getElementById('captureBtn');
@@ -27,69 +15,12 @@ let allTabs = [];
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
-  const { data: { session } } = await supabase.auth.getSession();
+  // プランバッジを更新
+  await updatePlanBadge();
 
-  if (session) {
-    await showMainView(session.user);
-  } else {
-    showLoginView();
-  }
-
-  // Auth state listener
-  supabase.auth.onAuthStateChange(async (_event, session) => {
-    if (session) {
-      await showMainView(session.user);
-    } else {
-      showLoginView();
-    }
-  });
-
-  // Login form
-  loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('emailInput').value;
-    const password = document.getElementById('passwordInput').value;
-
-    loginError.classList.add('hidden');
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      loginError.textContent = 'メールアドレスまたはパスワードが正しくありません';
-      loginError.classList.remove('hidden');
-    }
-  });
-
-  // Signup form
-  signupForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = document.getElementById('signupEmailInput').value;
-    const password = document.getElementById('signupPasswordInput').value;
-
-    signupError.classList.add('hidden');
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-      signupError.textContent = error.message;
-      signupError.classList.remove('hidden');
-    } else {
-      signupError.textContent = '確認メールを送信しました。メールを確認してください。';
-      signupError.style.color = '#16a34a';
-      signupError.classList.remove('hidden');
-    }
-  });
-
-  // View toggle
-  showSignupBtn.addEventListener('click', () => {
-    loginView.classList.add('hidden');
-    signupView.classList.remove('hidden');
-  });
-
-  showLoginBtn.addEventListener('click', () => {
-    signupView.classList.add('hidden');
-    loginView.classList.remove('hidden');
-  });
-
-  // Logout
-  logoutBtn.addEventListener('click', async () => {
-    await supabase.auth.signOut();
+  // 設定ボタン
+  settingsBtn.addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('src/options/options.html') });
   });
 
   // Capture mode
@@ -101,35 +32,13 @@ async function init() {
   updateRadioCardStates();
 }
 
-async function showMainView(user) {
-  loginView.classList.add('hidden');
-  signupView.classList.add('hidden');
-  mainView.classList.remove('hidden');
-  accountArea.classList.remove('hidden');
+async function updatePlanBadge() {
+  // ストレージからプラン情報を取得
+  const { userPlan } = await chrome.storage.local.get(['userPlan']);
+  const isPro = userPlan === 'pro';
 
-  accountEmail.textContent = user.email;
-
-  // サブスクリプション確認
-  const { data } = await supabase
-    .from('subscriptions')
-    .select('status')
-    .eq('user_id', user.id)
-    .single();
-
-  const isPro = data?.status === 'active';
   planBadge.textContent = isPro ? 'Pro' : '無料';
   planBadge.className = `plan-badge ${isPro ? 'plan-pro' : 'plan-free'}`;
-
-  // ストレージにプラン情報を保存（previewページから参照するため）
-  await chrome.storage.local.set({ userPlan: isPro ? 'pro' : 'free', userEmail: user.email });
-}
-
-function showLoginView() {
-  mainView.classList.add('hidden');
-  signupView.classList.add('hidden');
-  accountArea.classList.add('hidden');
-  loginView.classList.remove('hidden');
-  chrome.storage.local.remove(['userPlan', 'userEmail']);
 }
 
 function updateRadioCardStates() {
