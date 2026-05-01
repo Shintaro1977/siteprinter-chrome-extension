@@ -11,20 +11,20 @@ class CancelledError extends Error {
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'captureScreenshots') {
-    // Process captures asynchronously
-    // Using async IIFE with sendResponse to keep service worker alive
+    // Acknowledge immediately so the popup can safely close before capture completes.
+    // Avoids message loss when the service worker was dormant and the popup closes
+    // before the SW finishes waking up.
+    sendResponse({ received: true });
+
     (async () => {
       try {
         await handleCaptureScreenshots(request.tabIds);
-        sendResponse({ success: true });
       } catch (error) {
         console.error('Capture failed:', error);
-        sendResponse({ success: false, error: error.message });
       }
     })();
 
-    // Return true to indicate we'll respond asynchronously (keeps SW alive)
-    return true;
+    return false;
   }
 });
 
@@ -76,7 +76,7 @@ class ProgressManager {
         url: url,
         type: 'popup',
         width: 400,
-        height: 150,
+        height: 230,
         focused: true,  // Focus the window so it's visible
         left: 100,      // Position from left edge
         top: 100,       // Position from top edge
@@ -196,10 +196,12 @@ async function handleCaptureScreenshots(tabIds) {
 
   // Only open preview if not cancelled
   if (!wasCancelled) {
+    const { forceReload } = await chrome.storage.local.get({ forceReload: false });
     // Store screenshots data
     await chrome.storage.local.set({
       screenshots,
       capturedAt: new Date().toISOString(),
+      capturedWithReload: forceReload,
     });
 
     // Open preview page
@@ -217,6 +219,22 @@ async function captureFullPage(tabId) {
   // Activate tab
   await chrome.tabs.update(tabId, { active: true });
   await sleep(300);
+
+  // Force reload if option is enabled
+  const { forceReload } = await chrome.storage.local.get({ forceReload: false });
+  if (forceReload) {
+    await new Promise((resolve) => {
+      const listener = (updatedTabId, changeInfo) => {
+        if (updatedTabId === tabId && changeInfo.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(listener);
+          resolve();
+        }
+      };
+      chrome.tabs.onUpdated.addListener(listener);
+      chrome.tabs.reload(tabId);
+    });
+    await sleep(500);
+  }
 
   // Initialize progress manager
   const progressManager = new ProgressManager();

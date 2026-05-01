@@ -132,7 +132,13 @@ async function handleCapture() {
   }
 
   showLoading('スクリーンショットを取得中...');
-  chrome.runtime.sendMessage({ action: 'captureScreenshots', tabIds: tabsToCapture });
+
+  // Wait for the service worker to acknowledge before closing.
+  // Without this, closing the popup while the SW is dormant can drop the message.
+  await Promise.race([
+    chrome.runtime.sendMessage({ action: 'captureScreenshots', tabIds: tabsToCapture }).catch(() => {}),
+    new Promise((resolve) => setTimeout(resolve, 3000)),
+  ]);
   window.close();
 }
 

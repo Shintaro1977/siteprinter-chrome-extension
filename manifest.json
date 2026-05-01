@@ -22,7 +22,8 @@
     "tabs",
     "scripting",
     "storage",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "identity"
   ],
   "host_permissions": [
     "<all_urls>"

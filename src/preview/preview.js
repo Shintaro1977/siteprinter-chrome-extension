@@ -60,6 +60,7 @@ const cancelModalBtn = document.getElementById('cancelModalBtn');
 // State
 let screenshots = [];
 let capturedAt = '';
+let capturedWithReload = false;
 let userPlan = 'free'; // 'free' | 'pro'
 let settings = {
   paperSize: 'a4',
@@ -95,9 +96,10 @@ async function init() {
   loadJapaneseFont();
 
   // Load user plan and screenshots from storage
-  const data = await chrome.storage.local.get(['screenshots', 'capturedAt', 'userPlan', 'imageFormat']);
+  const data = await chrome.storage.local.get(['screenshots', 'capturedAt', 'capturedWithReload', 'userPlan', 'imageFormat']);
   screenshots = data.screenshots || [];
   capturedAt = data.capturedAt || new Date().toISOString();
+  capturedWithReload = data.capturedWithReload || false;
   userPlan = data.userPlan || 'free';
   settings.imageFormat = data.imageFormat || 'png';
 
@@ -456,9 +458,11 @@ function renderFooter(pageNum, totalPages) {
     minute: '2-digit',
   });
 
+  const reloadLabel = capturedWithReload ? ' (取得時リロードON)' : '';
+
   return `
     <div class="preview-page-footer">
-      <span>取得日時: ${dateStr}</span>
+      <span>取得日時: ${dateStr}${reloadLabel}</span>
       <span>${pageNum} / ${totalPages}</span>
       <div class="footer-right">
         <div>実際の画面表示とは異なる場合があります</div>
@@ -732,7 +736,8 @@ async function generatePDF() {
             minute: '2-digit',
           });
 
-          pdf.text(`取得日時: ${dateStr}`, PAGE_MARGIN, footerY);
+          const reloadLabel = capturedWithReload ? ' (取得時リロードON)' : '';
+          pdf.text(`取得日時: ${dateStr}${reloadLabel}`, PAGE_MARGIN, footerY);
           pdf.text(`${totalPageNum} / ${totalPages}`, paperWidth / 2, footerY, { align: 'center' });
 
           // Right side - two lines

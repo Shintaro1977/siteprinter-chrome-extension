@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build",
-    "clean": "rm -rf dist",
+    "build:website": "vite build --config vite.website.config.js",
+    "clean": "rm -rf dist dist-website",
     "generate-icons": "node scripts/generate-icons.js"
   },
   "devDependencies": {

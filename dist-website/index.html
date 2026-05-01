@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SitePrinter — Webページをまるごと PDF に</title>
+  <meta name="description" content="Chrome拡張機能でWebページ全体をスクリーンショット。A4/A3のきれいなPDFに変換。複数タブ一括処理対応。完全ローカル処理でプライバシー安全。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-50:  #eff6ff;
+      --blue-100: #dbeafe;
+      --blue-500: #3b82f6;
+      --blue-600: #2563eb;
+      --blue-700: #1d4ed8;
+      --blue-800: #1e40af;
+      --blue-900: #1e3a8a;
+      --slate-50:  #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+      --radius: 12px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+      --shadow: 0 4px 16px rgba(0,0,0,.10);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      color: var(--slate-800);
+      background: #fff;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--slate-200);
+    }
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--slate-900);
+    }
+    .nav-logo .badge {
+      font-size: 10px;
+      font-weight: 600;
+      background: var(--blue-100);
+      color: var(--blue-700);
+      padding: 2px 7px;
+      border-radius: 20px;
+      letter-spacing: .02em;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--slate-500);
+      transition: color .15s;
+    }
+    .nav-links a:hover { color: var(--slate-900); }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-ghost {
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--slate-600);
+      padding: 7px 14px;
+      border-radius: 8px;
+      transition: background .15s;
+    }
+    .btn-ghost:hover { background: var(--slate-100); }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      background: var(--blue-600);
+      padding: 8px 18px;
+      border-radius: 8px;
+      transition: background .15s, transform .1s;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: var(--blue-700); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    /* ─── HERO ─── */
+    .hero {
+      background: linear-gradient(135deg, var(--blue-700) 0%, var(--blue-500) 50%, #60a5fa 100%);
+      padding: 96px 24px 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+    .hero-content {
+      position: relative;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.25);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 60px);
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.15;
+      letter-spacing: -.02em;
+      margin-bottom: 20px;
+    }
+    .hero h1 span { color: #bfdbfe; }
+    .hero-sub {
+      font-size: 18px;
+      color: rgba(255,255,255,.85);
+      max-width: 520px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+    .hero-cta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .btn-hero {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      color: var(--blue-700);
+      font-size: 15px;
+      font-weight: 700;
+      padding: 14px 28px;
+      border-radius: 10px;
+      text-decoration: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,.15);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .btn-hero:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.2); }
+    .hero-note {
+      font-size: 13px;
+      color: rgba(255,255,255,.65);
+      margin-top: 20px;
+    }
+
+    /* ─── MOCK WINDOW ─── */
+    .hero-visual {
+      margin-top: 64px;
+      max-width: 880px;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+    }
+    .mock-window {
+      background: var(--slate-900);
+      border-radius: 12px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.4);
+      overflow: hidden;
+    }
+    .mock-bar {
+      background: #1a1a2e;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .mock-dots { display: flex; gap: 6px; }
+    .mock-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .mock-dot:nth-child(1) { background: #ff5f57; }
+    .mock-dot:nth-child(2) { background: #febc2e; }
+    .mock-dot:nth-child(3) { background: #28c840; }
+    .mock-url {
+      flex: 1;
+      background: rgba(255,255,255,.08);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      color: rgba(255,255,255,.5);
+    }
+    .mock-body {
+      background: #fff;
+      padding: 0;
+      min-height: 280px;
+      display: grid;
+      grid-template-columns: 1fr 280px;
+    }
+    .mock-page {
+      padding: 24px;
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .mock-line {
+      height: 10px;
+      background: var(--slate-200);
+      border-radius: 4px;
+    }
+    .mock-line.short { width: 60%; }
+    .mock-line.med   { width: 80%; }
+    .mock-img-block {
+      height: 100px;
+      background: linear-gradient(135deg, var(--blue-100), var(--blue-200));
+      border-radius: 8px;
+      margin-bottom: 4px;
+    }
+    .mock-sidebar {
+      background: #fff;
+      border-left: 1px solid var(--slate-200);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .mock-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--slate-400);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .mock-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--slate-600);
+    }
+    .mock-radio {
+      width: 14px; height: 14px;
+      border: 2px solid var(--blue-500);
+      border-radius: 50%;
+      background: var(--blue-500);
+      position: relative;
+    }
+    .mock-radio::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 5px; height: 5px;
+      background: #fff;
+      border-radius: 50%;
+    }
+    .mock-radio.off { background: transparent; }
+    .mock-pdf-btn {
+      background: var(--blue-600);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      margin-top: auto;
+    }
+    .mock-progress {
+      height: 6px;
+      background: var(--slate-100);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .mock-progress-bar {
+      height: 100%;
+      width: 70%;
+      background: linear-gradient(90deg, var(--blue-500), var(--blue-400));
+      border-radius: 3px;
+      animation: progress-anim 2.5s ease-in-out infinite;
+    }
+    @keyframes progress-anim {
+      0%   { width: 0%; }
+      60%  { width: 85%; }
+      100% { width: 100%; }
+    }
+
+    /* ─── SECTION COMMON ─── */
+    section { padding: 96px 24px; }
+    .section-inner { max-width: 1100px; margin: 0 auto; }
+    .section-tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--blue-600);
+      background: var(--blue-50);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: clamp(26px, 4vw, 38px);
+      font-weight: 800;
+      color: var(--slate-900);
+      line-height: 1.2;
+      letter-spacing: -.02em;
+      margin-bottom: 16px;
+    }
+    .section-sub {
+      font-size: 17px;
+      color: var(--slate-500);
+      max-width: 540px;
+      line-height: 1.7;
+      margin-bottom: 64px;
+    }
+
+    /* ─── FEATURES ─── */
+    .features { background: var(--slate-50); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow .2s, transform .2s;
+    }
+    .feature-card:hover {
+      box-shadow: var(--shadow);
+      transform: translateY(-2px);
+    }
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--blue-50);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .feature-icon svg { color: var(--blue-600); }
+    .feature-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 8px;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--slate-500);
+      line-height: 1.65;
+    }
+    .feature-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--blue-700);
+      background: var(--blue-100);
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 12px;
+    }
+
+    /* ─── HOW IT WORKS ─── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0;
+      position: relative;
+      counter-reset: steps;
+    }
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 32px;
+      left: calc(100% / 6);
+      right: calc(100% / 6);
+      height: 2px;
+      background: var(--blue-100);
+      z-index: 0;
+    }
+    .step {
+      text-align: center;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+    .step-num {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: var(--blue-600);
+      color: #fff;
+      font-size: 22px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 0 0 8px var(--blue-50);
+    }
+    .step h3 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 8px;
+    }
+    .step p {
+      font-size: 14px;
+      color: var(--slate-500);
+      line-height: 1.65;
+    }
+
+    /* ─── PRICING ─── */
+    .pricing { background: var(--slate-50); }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      max-width: 780px;
+      margin: 0 auto;
+    }
+    .plan-card {
+      background: #fff;
+      border: 2px solid var(--slate-200);
+      border-radius: 16px;
+      padding: 36px 32px;
+      position: relative;
+    }
+    .plan-card.featured {
+      border-color: var(--blue-500);
+      box-shadow: 0 0 0 4px var(--blue-50), var(--shadow-lg);
+    }
+    .plan-badge-top {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--blue-600);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 16px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .plan-name {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--slate-400);
+      margin-bottom: 8px;
+    }
+    .plan-card.featured .plan-name { color: var(--blue-600); }
+    .plan-price {
+      font-size: 40px;
+      font-weight: 800;
+      color: var(--slate-900);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .plan-price span {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--slate-400);
+    }
+    .plan-desc {
+      font-size: 14px;
+      color: var(--slate-500);
+      margin-bottom: 28px;
+      min-height: 40px;
+    }
+    .plan-divider {
+      border: none;
+      border-top: 1px solid var(--slate-100);
+      margin-bottom: 24px;
+    }
+    .plan-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .plan-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--slate-700);
+    }
+    .plan-features li .check {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #dcfce7;
+      flex-shrink: 0;
+      margin-top: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .plan-features li .check svg { color: #16a34a; }
+    .plan-btn {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 10px;
+      transition: all .15s;
+    }
+    .plan-btn-outline {
+      border: 2px solid var(--slate-200);
+      color: var(--slate-700);
+    }
+    .plan-btn-outline:hover { border-color: var(--slate-400); background: var(--slate-50); }
+    .plan-btn-fill {
+      background: var(--blue-600);
+      color: #fff;
+    }
+    .plan-btn-fill:hover { background: var(--blue-700); }
+
+    /* ─── CTA SECTION ─── */
+    .cta-section {
+      background: linear-gradient(135deg, var(--blue-800), var(--blue-600));
+      text-align: center;
+      padding: 96px 24px;
+    }
+    .cta-section h2 {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -.02em;
+      margin-bottom: 16px;
+    }
+    .cta-section p {
+      font-size: 17px;
+      color: rgba(255,255,255,.8);
+      margin-bottom: 40px;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--slate-900);
+      color: rgba(255,255,255,.5);
+      padding: 40px 24px;
+    }
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .footer-logo {
+      font-size: 16px;
+      font-weight: 700;
+      color: rgba(255,255,255,.8);
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+    .footer-links a {
+      text-decoration: none;
+      font-size: 13px;
+      color: rgba(255,255,255,.45);
+      transition: color .15s;
+    }
+    .footer-links a:hover { color: rgba(255,255,255,.8); }
+    .footer-copy {
+      font-size: 13px;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      section { padding: 64px 20px; }
+      .nav-links { display: none; }
+      .mock-body { grid-template-columns: 1fr; }
+      .mock-sidebar { display: none; }
+      .steps::before { display: none; }
+      .step { padding-bottom: 40px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#3b82f6">
+        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+        <rect x="6" y="14" width="12" height="8"></rect>
+      </svg>
+      SitePrinter
+      <span class="badge">extension</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">機能</a></li>
+      <li><a href="#how">使い方</a></li>
+      <li><a href="#pricing">料金プラン</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="/account" class="btn-ghost">ログイン</a>
+      <a href="#install" class="btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Chromeに追加
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      Chrome拡張機能
+    </div>
+    <h1>Webページをまるごと<br><span>PDF に変換</span>する</h1>
+    <p class="hero-sub">
+      スクロールしながら自動撮影。A4/A3のきれいなレイアウトで保存。<br>
+      すべての処理はブラウザ内で完結。クラウドへの送信なし。
+    </p>
+    <div class="hero-cta">
+      <a href="#install" class="btn-hero" id="install">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Chromeに追加（無料）
+      </a>
+    </div>
+    <p class="hero-note">Chrome Web Store から入手 · 完全無料ではじめられます</p>
+  </div>
+
+  <div class="hero-visual">
+    <div class="mock-window">
+      <div class="mock-bar">
+        <div class="mock-dots">
+          <div class="mock-dot"></div>
+          <div class="mock-dot"></div>
+          <div class="mock-dot"></div>
+        </div>
+        <div class="mock-url">example.com/report</div>
+      </div>
+      <div class="mock-body">
+        <div class="mock-page">
+          <div class="mock-img-block"></div>
+          <div class="mock-line short"></div>
+          <div class="mock-line med"></div>
+          <div class="mock-line"></div>
+          <div class="mock-line short"></div>
+          <div class="mock-line med"></div>
+          <div class="mock-line"></div>
+          <div class="mock-progress"><div class="mock-progress-bar"></div></div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:4px;">スクリーンショットを取得中… 3 / 5</div>
+        </div>
+        <div class="mock-sidebar">
+          <div class="mock-label">PDF設定</div>
+          <div class="mock-option"><div class="mock-radio"></div> A4 縦</div>
+          <div class="mock-option"><div class="mock-radio off"></div> A3 縦</div>
+          <div style="border-top:1px solid #f1f5f9;"></div>
+          <div class="mock-label">列数</div>
+          <div class="mock-option"><div class="mock-radio"></div> 1列</div>
+          <div class="mock-option"><div class="mock-radio off"></div> 2列</div>
+          <div class="mock-pdf-btn">PDFをダウンロード</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FEATURES ─── -->
+<section class="features" id="features">
+  <div class="section-inner">
+    <div class="section-tag">機能</div>
+    <h2 class="section-title">必要なものが、すべて揃っている</h2>
+    <p class="section-sub">面倒な設定不要。拡張機能を入れてボタンを押すだけで、プロ品質のPDFが手に入ります。</p>
+    <div class="features-grid">
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+          </svg>
+        </div>
+        <h3>ページ全体をキャプチャ</h3>
+        <p>スクロールが必要な長いページも、自動で一枚のスクリーンショットに合成。見切れなし。</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </div>
+        <h3>A4 / A3 PDF出力</h3>
+        <p>印刷にそのまま使えるA4・A3サイズのPDFを生成。ヘッダーやフッターで情報を自動付与。</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="3" width="13" height="13" rx="2"/><path d="M5 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-1"/>
+          </svg>
+        </div>
+        <h3>複数タブを一括処理</h3>
+        <p>複数のページを選んでまとめてキャプチャ。1つのPDFにまとめて出力できます。</p>
+        <span class="feature-badge">Pro</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </div>
+        <h3>カスタムレイアウト</h3>
+        <p>1〜4列の柔軟なグリッドレイアウト。資料作成や比較表示に最適なレイアウトで出力。</p>
+        <span class="feature-badge">Pro</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <h3>完全ローカル処理</h3>
+        <p>スクリーンショットのデータは外部サーバーに送信しません。すべての処理がブラウザ内で完結。</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.8 12.89L18 15.68a7 7 0 0 0-1.26-9.02L19.07 4.93z"/><path d="M4.93 4.93a10 10 0 0 0-1.8 12.89L6 15.68a7 7 0 0 1 1.26-9.02L4.93 4.93z"/>
+          </svg>
+        </div>
+        <h3>取得前の強制リロード</h3>
+        <p>キャプチャ直前にページをリロードするオプション。最新の状態を確実にキャプチャできます。</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS ─── -->
+<section id="how">
+  <div class="section-inner">
+    <div class="section-tag">使い方</div>
+    <h2 class="section-title">3ステップで完了</h2>
+    <p class="section-sub">難しい設定は一切なし。インストールからPDF生成まで、最短1分でできます。</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <h3>拡張機能をインストール</h3>
+        <p>Chrome Web StoreからSitePrinterを追加。ボタン一つで完了します。</p>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <h3>キャプチャしたいページを開く</h3>
+        <p>保存したいWebページを開き、ブラウザ右上の拡張機能アイコンをクリック。</p>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <h3>PDFをダウンロード</h3>
+        <p>「スクリーンショットを取得」ボタンを押してプレビューを確認。そのままPDFで保存。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PRICING ─── -->
+<section class="pricing" id="pricing">
+  <div class="section-inner" style="text-align:center;">
+    <div class="section-tag">料金プラン</div>
+    <h2 class="section-title">シンプルな料金体系</h2>
+    <p class="section-sub" style="margin:0 auto 64px;">無料プランでまず試せます。本格的に使いたくなったらProへ。</p>
+    <div class="pricing-grid">
+
+      <div class="plan-card">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">¥0 <span>/ 月</span></div>
+        <div class="plan-desc">まずは無料で試してみてください</div>
+        <hr class="plan-divider">
+        <ul class="plan-features">
+          <li>
+            <span class="check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            フルページスクリーンショット
+          </li>
+          <li>
+            <span class="check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            A4 PDF出力（1列）
+          </li>
+          <li>
+            <span class="check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            PNG / JPEG 画像形式選択
+          </li>
+          <li>
+            <span class="check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            完全ローカル処理
+          </li>
+        </ul>
+        <a href="#install" class="plan-btn plan-btn-outline">無料でインストール</a>
+      </div>
+
+      <div class="plan-card featured">
+        <div class="plan-badge-top">おすすめ</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">近日公開 <span></span></div>
+        <div class="plan-desc">業務・資料作成に本格対応</div>
+        <hr class="plan-divider">
+        <ul class="plan-features">
+          <li>
+            <span class="check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            Freeプランの全機能
+          </li>
+          <li>
+            <span class="check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            A3用紙サイズ対応
+          </li>
+          <li>
+            <span class="check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            2〜4列カスタムレイアウト
+          </li>
+          <li>
+            <span class="check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            ヘッダー・フッターカスタマイズ
+          </li>
+          <li>
+            <span class="check"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            複数タブ一括処理
+          </li>
+        </ul>
+        <a href="/account" class="plan-btn plan-btn-fill">アカウントを作成</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA ─── -->
+<section class="cta-section">
+  <div class="section-inner">
+    <h2>今すぐ無料ではじめる</h2>
+    <p>インストールは1分。クレジットカード不要。</p>
+    <a href="#install" class="btn-hero" style="display:inline-flex;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+      </svg>
+      Chrome に追加する（無料）
+    </a>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo">SitePrinter</div>
+    <div class="footer-links">
+      <a href="/account">ログイン</a>
+      <a href="/account">アカウント作成</a>
+      <a href="https://siteprinter.jp" target="_blank">siteprinter.jp</a>
+    </div>
+    <div class="footer-copy">© 2025 SitePrinter</div>
+  </div>
+</footer>
+
+</body>
+</html>
