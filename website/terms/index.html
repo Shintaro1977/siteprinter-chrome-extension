@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>利用規約 — SitePrinter</title>
+  <meta name="description" content="SitePrinterの利用規約">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-600: #2563eb;
+      --blue-700: #1d4ed8;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      color: var(--slate-800);
+      background: #fff;
+      line-height: 1.8;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--slate-200);
+    }
+    .nav-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+    }
+    .nav-logo {
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--slate-900);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 64px 24px 96px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: -.02em;
+      margin-bottom: 8px;
+    }
+
+    .effective-date {
+      font-size: 14px;
+      color: var(--slate-400);
+      margin-bottom: 48px;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-top: 48px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--slate-200);
+    }
+
+    p {
+      font-size: 15px;
+      color: var(--slate-700);
+      margin-bottom: 16px;
+    }
+
+    ul {
+      font-size: 15px;
+      color: var(--slate-700);
+      padding-left: 24px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    footer {
+      background: var(--slate-900);
+      color: rgba(255,255,255,.5);
+      padding: 32px 24px;
+      text-align: center;
+      font-size: 13px;
+    }
+    footer a {
+      color: rgba(255,255,255,.5);
+      text-decoration: none;
+    }
+    footer a:hover { color: rgba(255,255,255,.8); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#3b82f6">
+        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+        <rect x="6" y="14" width="12" height="8"></rect>
+      </svg>
+      SitePrinter
+    </a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>利用規約</h1>
+  <p class="effective-date">最終更新日：2025年5月2日</p>
+
+  <p>本利用規約（以下「本規約」）は、SitePrinter（以下「当サービス」）の利用条件を定めるものです。ユーザーの皆様（以下「ユーザー」）は、本規約に同意の上、当サービスをご利用ください。</p>
+
+  <h2>第1条（サービスの概要）</h2>
+  <p>当サービスは、WebページのスクリーンショットをPDFとして出力するChrome拡張機能を提供します。無料プラン（Free）および有料プラン（Pro）があり、Proプランは月額300円にてご利用いただけます。</p>
+
+  <h2>第2条（利用登録）</h2>
+  <p>Proプランのご利用には、メールアドレスまたはGoogleアカウントによるアカウント登録が必要です。登録情報は正確かつ最新のものを入力してください。</p>
+
+  <h2>第3条（料金と支払い）</h2>
+  <ul>
+    <li>Proプランの料金は月額300円（税込）です。</li>
+    <li>料金はStripeを通じてクレジットカードで決済されます。</li>
+    <li>サブスクリプションは月次で自動更新されます。</li>
+    <li>解約手続きを行った場合、当該請求期間の終了日まで引き続きご利用いただけます。</li>
+    <li>日割り返金はいたしません。</li>
+  </ul>
+
+  <h2>第4条（解約）</h2>
+  <p>Proプランの解約はいつでも拡張機能の設定画面（オプションページ）から行うことができます。解約後も、支払い済みの期間終了日までProプランの機能をご利用いただけます。</p>
+
+  <h2>第5条（禁止事項）</h2>
+  <p>ユーザーは以下の行為を行ってはなりません。</p>
+  <ul>
+    <li>当サービスを違法な目的に利用すること</li>
+    <li>他者の著作権・プライバシー・その他の権利を侵害する行為</li>
+    <li>当サービスのリバースエンジニアリング、改ざん、または不正アクセス</li>
+    <li>アカウントの第三者への譲渡・共有</li>
+    <li>当サービスの運営を妨害する行為</li>
+  </ul>
+
+  <h2>第6条（知的財産権）</h2>
+  <p>当サービスに関する著作権、商標権その他の知的財産権は、当サービスの運営者に帰属します。ユーザーが当サービスを通じて生成したPDFファイルに関する権利は、ユーザー自身に帰属します。</p>
+
+  <h2>第7条（免責事項）</h2>
+  <ul>
+    <li>当サービスは現状有姿で提供されます。特定目的への適合性、継続的な利用可能性を保証するものではありません。</li>
+    <li>当サービスの利用によって生じた損害について、当サービスの運営者は一切の責任を負いません。</li>
+    <li>ウェブページのコンテンツはユーザー自身の責任において利用してください。</li>
+  </ul>
+
+  <h2>第8条（サービスの変更・停止）</h2>
+  <p>当サービスは、予告なくサービス内容の変更、追加、または停止を行う場合があります。重要な変更については、可能な限り事前にお知らせするよう努めます。</p>
+
+  <h2>第9条（個人情報の取り扱い）</h2>
+  <p>当サービスが収集する個人情報（メールアドレス等）は、サービス提供および決済処理の目的にのみ使用します。第三者への提供は、法令に基づく場合を除き行いません。なお、スクリーンショットのデータはすべてブラウザ内で処理され、外部サーバーには送信されません。</p>
+
+  <h2>第10条（規約の変更）</h2>
+  <p>当サービスは、必要に応じて本規約を変更することがあります。変更後の規約は、当ページに掲載した時点から効力を生じます。変更後も当サービスをご利用の場合は、変更後の規約に同意したものとみなします。</p>
+
+  <h2>第11条（準拠法・管轄裁判所）</h2>
+  <p>本規約は日本法を準拠法とします。当サービスに関する紛争については、東京地方裁判所を第一審の専属的合意管轄裁判所とします。</p>
+</div>
+
+<footer>
+  <a href="/">SitePrinter</a> &nbsp;·&nbsp; © 2025 SitePrinter
+</footer>
+
+</body>
+</html>
