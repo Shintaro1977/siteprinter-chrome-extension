@@ -570,6 +570,8 @@ async function generatePDF() {
       totalPages += Math.ceil(totalSections / cellsPerPage);
     }
 
+    updateLoadingProgress(0, totalPages);
+
     // Pre-load favicons for all screenshots
     const faviconCache = new Map();
     for (const screenshot of validScreenshots) {
