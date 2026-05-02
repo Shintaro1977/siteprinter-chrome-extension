@@ -765,13 +765,14 @@ async function generatePDF() {
       }
     }
 
-    // Generate filename: {title}_{YYYYMMDD_HHMMSS}.pdf (fallback: siteprinter_{timestamp}.pdf)
+    // Generate filename: siteprinter_{title}_{YYYYMMDD_HHMMSS}.pdf
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
     const MAX_TITLE_LEN = 30;
     const rawTitle = validScreenshots[0]?.title || '';
     const sanitized = rawTitle
+      .replace(/^siteprinter[\s_\-:：]*/i, '')  // 先頭の "SitePrinter" 重複を除去
       .replace(/[/\\:*?"<>|]/g, '')
       .replace(/\s+/g, '_')
       .replace(/_+/g, '_')
@@ -782,7 +783,7 @@ async function generatePDF() {
       ? (validScreenshots.length > 1 ? `${sanitized}_他${validScreenshots.length - 1}件` : sanitized)
       : '';
     const filename = titlePart
-      ? `${titlePart}_${timestamp}.pdf`
+      ? `siteprinter_${titlePart}_${timestamp}.pdf`
       : `siteprinter_${timestamp}.pdf`;
 
     // Download PDF
