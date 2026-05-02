@@ -129,6 +129,9 @@ async function init() {
   // Set UI controls to match current settings
   initializeUIControls();
 
+  // Show capture info
+  updateCaptureInfo();
+
   // Initial render
   renderPreview();
 }
@@ -806,6 +809,31 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text || '';
   return div.innerHTML;
+}
+
+function updateCaptureInfo() {
+  const formatEl = document.getElementById('captureFormatInfo');
+  const sizeEl = document.getElementById('estimatedSizeInfo');
+  if (!formatEl || !sizeEl) return;
+
+  const fmt = settings.imageFormat === 'jpeg' ? 'JPEG' : 'PNG';
+  formatEl.textContent = fmt;
+
+  const valid = screenshots.filter((s) => s.dataUrl);
+  if (valid.length === 0) {
+    sizeEl.textContent = '—';
+    return;
+  }
+
+  // base64 → バイト数に変換して合計（÷1.37 でバイナリサイズ）＋PDFオーバーヘッド
+  const totalImageBytes = valid.reduce((sum, s) => sum + Math.round(s.dataUrl.length / 1.37), 0);
+  const estimatedBytes = totalImageBytes + 60 * 1024;
+
+  if (estimatedBytes < 1024 * 1024) {
+    sizeEl.textContent = `約 ${Math.round(estimatedBytes / 1024)} KB`;
+  } else {
+    sizeEl.textContent = `約 ${(estimatedBytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
 }
 
 function showLoading(text) {
