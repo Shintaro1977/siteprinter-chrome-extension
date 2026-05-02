@@ -765,7 +765,7 @@ async function generatePDF() {
       }
     }
 
-    // Generate filename: siteprinter_{title}_{YYYYMMDD_HHMMSS}.pdf
+    // Generate filename: {title}_{YYYYMMDD_HHMMSS}.pdf (fallback: siteprinter_{timestamp}.pdf)
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
@@ -782,7 +782,7 @@ async function generatePDF() {
       ? (validScreenshots.length > 1 ? `${sanitized}_他${validScreenshots.length - 1}件` : sanitized)
       : '';
     const filename = titlePart
-      ? `siteprinter_${titlePart}_${timestamp}.pdf`
+      ? `${titlePart}_${timestamp}.pdf`
       : `siteprinter_${timestamp}.pdf`;
 
     // Download PDF
