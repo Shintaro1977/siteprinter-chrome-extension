@@ -609,7 +609,7 @@ async function generatePDF() {
         isFirstPage = false;
         totalPageNum++;
         updateLoadingProgress(totalPageNum, totalPages);
-        await new Promise((r) => setTimeout(r, 0));
+        await new Promise((r) => requestAnimationFrame(r));
 
         let y = PAGE_MARGIN;
 
