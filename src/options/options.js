@@ -263,7 +263,7 @@ function showAuthView() {
 }
 
 async function loadImageFormatSetting() {
-  const { imageFormat } = await chrome.storage.local.get({ imageFormat: 'png' });
+  const { imageFormat } = await chrome.storage.local.get({ imageFormat: 'jpeg' });
   const radio = document.querySelector(`input[name="imageFormat"][value="${imageFormat}"]`);
   if (radio) radio.checked = true;
 }

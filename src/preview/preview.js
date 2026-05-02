@@ -70,7 +70,7 @@ let settings = {
   showHeader: false,
   showFooter: false,
   showBorder: true,
-  imageFormat: 'png', // 'png' | 'jpeg'
+  imageFormat: 'jpeg', // 'png' | 'jpeg'
 };
 
 // Constants

@@ -521,6 +521,13 @@ body {
   font-weight: 600;
 }
 
+.radio-note {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
 /* Refresh Button */
 .btn-refresh {
   display: flex;
