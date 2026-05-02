@@ -669,10 +669,12 @@ async function generatePDF() {
             const labelHeight = 3; // Space for label itself (mm)
             const availableImageHeight = cellHeight - labelSpacing - labelHeight;
 
-            // Create canvas for this section
+            // Create canvas for this section (cap width to avoid string length errors)
+            const MAX_CANVAS_WIDTH = 2000;
+            const scale = Math.min(1, MAX_CANVAS_WIDTH / img.width);
             const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = Math.ceil(sourceHeight);
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(sourceHeight * scale);
 
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = '#ffffff';
@@ -681,7 +683,7 @@ async function generatePDF() {
             ctx.drawImage(
               img,
               0, sourceY, img.width, sourceHeight,
-              0, 0, img.width, sourceHeight
+              0, 0, canvas.width, canvas.height
             );
 
             // Convert to data URL based on selected format
