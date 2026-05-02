@@ -14,7 +14,6 @@ const upgradeBtn = document.getElementById('upgradeBtn');
 const manageBtn = document.getElementById('manageBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const refreshBtn = document.getElementById('refreshBtn');
-const versionText = document.getElementById('versionText');
 const toast = document.getElementById('toast');
 const toastMessage = document.getElementById('toastMessage');
 
@@ -44,9 +43,6 @@ function switchAuthTab(tab) {
 }
 
 async function init() {
-  const manifest = chrome.runtime.getManifest();
-  versionText.textContent = manifest.version;
-
   // キャッシュからプランバッジを即時反映（Supabase取得前のちらつき防止）
   const { userPlan } = await chrome.storage.local.get({ userPlan: null });
   if (userPlan) {

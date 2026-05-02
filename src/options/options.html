@@ -7,20 +7,102 @@
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
+  <!-- Header: コンテナ外、画面幅いっぱい -->
+  <header class="header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1 class="logo">SitePrinter</h1>
+        <span class="badge">extension</span>
+      </div>
+      <div class="header-right">
+        <span id="planBadge" class="plan-badge plan-free">無料</span>
+      </div>
+    </div>
+  </header>
+
   <div class="container">
-    <header class="header">
-      <div class="header-content">
-        <div class="header-left">
-          <h1 class="logo">SitePrinter</h1>
-          <span class="badge">extension</span>
-        </div>
-        <div class="header-right">
-          <span id="planBadge" class="plan-badge plan-free">無料</span>
+    <!-- PDF設定（常に表示） -->
+    <div class="settings-container">
+      <div class="settings-section">
+        <h2 class="section-title">PDF設定</h2>
+        <div class="info-card">
+          <div class="setting-group">
+            <label class="setting-label">画像形式</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input type="radio" name="imageFormat" value="jpeg" checked>
+                <div class="radio-content">
+                  <span class="radio-title">⚡ JPEG（軽量）</span>
+                </div>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="imageFormat" value="png">
+                <div class="radio-content">
+                  <span class="radio-title">🖼️ PNG（高画質）</span>
+                  <span class="radio-note">長いページではエラーになる場合があります</span>
+                </div>
+              </label>
+            </div>
+          </div>
+          <div class="setting-group setting-group--row">
+            <div class="setting-group-text">
+              <label class="setting-label" for="forceReloadToggle">取得前に強制リロード</label>
+              <p class="setting-description">スクリーンショット取得前にページを再読み込みします。<br>ONの場合、出力結果に「取得時リロードON」と表示されます。</p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="forceReloadToggle">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
         </div>
       </div>
-    </header>
+    </div>
 
-    <!-- ログイン前 / アカウント作成（タブ切り替え） -->
+    <!-- ログイン後 -->
+    <main id="mainView" class="main hidden">
+      <div class="settings-section">
+        <h2 class="section-title">アカウント情報</h2>
+        <div class="info-card">
+          <div class="info-row">
+            <span class="info-label">メールアドレス</span>
+            <span id="accountEmail" class="info-value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">プラン</span>
+            <span id="accountPlanBadge" class="plan-badge plan-free-card">無料</span>
+          </div>
+          <div id="periodEndRow" class="info-row hidden">
+            <span class="info-label">利用期限</span>
+            <span id="periodEndText" class="info-value period-end-text">-</span>
+          </div>
+          <div class="card-action-row">
+            <button id="manageBtn" class="btn btn-secondary hidden">サブスクリプションを管理</button>
+            <button id="logoutBtn" class="btn btn-secondary">ログアウト</button>
+          </div>
+        </div>
+
+        <button id="refreshBtn" class="btn-refresh">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          プラン情報を更新
+        </button>
+
+        <!-- アップグレードバナー（無料プランのみ表示） -->
+        <div id="upgradeBanner" class="upgrade-banner hidden">
+          <div class="upgrade-banner-content">
+            <div class="upgrade-banner-text">
+              <strong>Proプランにアップグレード</strong>
+              <span>高解像度出力・A3対応・透かしなしなどの機能が利用できます</span>
+            </div>
+            <button id="upgradeBtn" class="btn-upgrade">アップグレード</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ログイン前（PDF設定の下） -->
     <div id="authView" class="settings-container hidden">
       <div class="settings-section">
         <h2 class="section-title">アカウント</h2>
@@ -87,100 +169,10 @@
       </div>
     </div>
 
-    <!-- PDF設定（常に表示） -->
-    <div class="settings-container">
-      <div class="settings-section">
-        <h2 class="section-title">PDF設定</h2>
-        <div class="info-card">
-          <div class="setting-group">
-            <label class="setting-label">画像形式</label>
-            <div class="radio-group">
-              <label class="radio-option">
-                <input type="radio" name="imageFormat" value="jpeg" checked>
-                <div class="radio-content">
-                  <span class="radio-title">⚡ JPEG（軽量）</span>
-                </div>
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="imageFormat" value="png">
-                <div class="radio-content">
-                  <span class="radio-title">🖼️ PNG（高画質）</span>
-                  <span class="radio-note">長いページではメモリ制限によりエラーになる場合があります</span>
-                </div>
-              </label>
-            </div>
-          </div>
-          <div class="setting-group setting-group--row">
-            <div class="setting-group-text">
-              <label class="setting-label" for="forceReloadToggle">取得前に強制リロード</label>
-              <p class="setting-description">スクリーンショット取得前にページを再読み込みします。ONの場合、出力結果に「取得時リロードON」と表示されます。</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="forceReloadToggle">
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-        </div>
-      </div>
+    <!-- サイトリンク（最下部、常に表示） -->
+    <div class="site-footer">
+      <a href="https://extension.siteprinter.jp" target="_blank" class="site-footer-link">extension.siteprinter.jp</a>
     </div>
-
-    <!-- ログイン後 -->
-    <main id="mainView" class="main hidden">
-      <div class="settings-section">
-        <h2 class="section-title">アカウント情報</h2>
-        <div class="info-card">
-          <div class="info-row">
-            <span class="info-label">メールアドレス</span>
-            <span id="accountEmail" class="info-value">-</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">プラン</span>
-            <span id="accountPlanBadge" class="plan-badge plan-free-card">無料</span>
-          </div>
-          <div id="periodEndRow" class="info-row hidden">
-            <span class="info-label">利用期限</span>
-            <span id="periodEndText" class="info-value period-end-text">-</span>
-          </div>
-        </div>
-        <button id="refreshBtn" class="btn-refresh">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-          </svg>
-          プラン情報を更新
-        </button>
-
-        <!-- アップグレードバナー（無料プランのみ表示） -->
-        <div id="upgradeBanner" class="upgrade-banner hidden">
-          <div class="upgrade-banner-content">
-            <div class="upgrade-banner-text">
-              <strong>Proプランにアップグレード</strong>
-              <span>高解像度出力・A3対応・透かしなしなどの機能が利用できます</span>
-            </div>
-            <button id="upgradeBtn" class="btn-upgrade">アップグレード</button>
-          </div>
-        </div>
-
-        <div class="action-row">
-          <button id="manageBtn" class="btn btn-secondary hidden">サブスクリプションを管理</button>
-          <button id="logoutBtn" class="btn btn-secondary">ログアウト</button>
-        </div>
-      </div>
-
-      <div class="settings-section">
-        <h2 class="section-title">情報</h2>
-        <div class="info-card">
-          <div class="info-row">
-            <span class="info-label">バージョン</span>
-            <span id="versionText" class="info-value">1.0.0</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Webサイト</span>
-            <a href="https://extension.siteprinter.jp" target="_blank" class="info-link">extension.siteprinter.jp</a>
-          </div>
-        </div>
-      </div>
-    </main>
   </div>
 
   <!-- Toast Notification -->
