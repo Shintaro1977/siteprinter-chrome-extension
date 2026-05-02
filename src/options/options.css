@@ -52,10 +52,9 @@ body {
   gap: 12px;
 }
 
-.logo {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
+.logo-img {
+  height: 22px;
+  display: block;
 }
 
 .badge {

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SitePrinter — Webページをまるごと PDF に</title>
   <meta name="description" content="Chrome拡張機能でWebページ全体をスクリーンショット。A4/A3のきれいなPDFに変換。複数タブ一括処理対応。完全ローカル処理でプライバシー安全。">
+  <link rel="icon" href="/images/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -65,9 +66,10 @@
       align-items: center;
       gap: 8px;
       text-decoration: none;
-      font-weight: 700;
-      font-size: 18px;
-      color: var(--slate-900);
+    }
+    .nav-logo-img {
+      height: 20px;
+      display: block;
     }
     .nav-logo .badge {
       font-size: 10px;
@@ -610,10 +612,10 @@
       flex-wrap: wrap;
       gap: 16px;
     }
-    .footer-logo {
-      font-size: 16px;
-      font-weight: 700;
-      color: rgba(255,255,255,.8);
+    .footer-logo img {
+      height: 18px;
+      display: block;
+      opacity: .85;
     }
     .footer-links {
       display: flex;
@@ -647,12 +649,7 @@
 <nav>
   <div class="nav-inner">
     <a href="/" class="nav-logo">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:#3b82f6">
-        <polyline points="6 9 6 2 18 2 18 9"></polyline>
-        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-        <rect x="6" y="14" width="12" height="8"></rect>
-      </svg>
-      SitePrinter
+      <img src="/images/logo.svg" alt="SitePrinter" class="nav-logo-img">
       <span class="badge">extension</span>
     </a>
     <ul class="nav-links">
@@ -923,7 +920,7 @@
 <!-- ─── FOOTER ─── -->
 <footer>
   <div class="footer-inner">
-    <div class="footer-logo">SitePrinter</div>
+    <div class="footer-logo"><img src="/images/SitePrinterLogo_wh.svg" alt="SitePrinter"></div>
     <div class="footer-links">
       <a href="/terms/">利用規約</a>
     </div>

@@ -79,10 +79,9 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
-.logo {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
+.logo-img {
+  height: 18px;
+  display: block;
 }
 
 .badge {
