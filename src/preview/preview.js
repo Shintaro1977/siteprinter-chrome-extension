@@ -825,9 +825,40 @@ function updateCaptureInfo() {
     return;
   }
 
-  // base64 → バイト数に変換して合計（÷1.37 でバイナリサイズ）＋PDFオーバーヘッド
-  const totalImageBytes = valid.reduce((sum, s) => sum + Math.round(s.dataUrl.length / 1.37), 0);
-  const estimatedBytes = totalImageBytes + 60 * 1024;
+  const MAX_CANVAS_WIDTH = 2000;
+  const paper = PAPER_SIZES[settings.paperSize];
+  const hH = settings.showHeader ? (HEADER_HEIGHT + CONTENT_SPACING) : 0;
+  const fH = settings.showFooter ? (FOOTER_HEIGHT + CONTENT_SPACING) : 0;
+  const cellGap = 2;
+  const contentW = paper.width - PAGE_MARGIN * 2;
+  const contentH = paper.height - PAGE_MARGIN * 2 - hH - fH;
+  const cellW = (contentW - (settings.columns - 1) * cellGap) / settings.columns;
+  const cellH = contentH;
+  const cellAspect = cellW / cellH;
+  const overlapRatio = OVERLAP_SIZES[settings.overlap];
+
+  let estimatedBytes = 80 * 1024; // PDF overhead
+
+  for (const s of valid) {
+    if (!s.dataUrl) continue;
+    const iw = s.width || 1920;
+    const ih = s.height || 3000;
+    const scale = Math.min(1, MAX_CANVAS_WIDTH / iw);
+
+    if (settings.imageFormat === 'jpeg') {
+      // JPEG: 再圧縮(0.35×) + 2000px へのスケールダウン(scale²)
+      const storedBytes = s.dataUrl.length / 1.37;
+      estimatedBytes += storedBytes * 0.34 * scale * scale;
+    } else {
+      // PNG: jsPDFが内部でRGBほぼ非圧縮で埋め込むためセクション数 × rawピクセル数で推定
+      const canvasW = Math.round(iw * scale);
+      const cellContentH_px = iw / cellAspect;
+      const stepH_px = cellContentH_px * (1 - overlapRatio);
+      const numSections = Math.max(1, Math.ceil((ih - cellContentH_px * overlapRatio) / stepH_px));
+      const sectionH_px = Math.round(cellContentH_px * scale);
+      estimatedBytes += canvasW * sectionH_px * 3 * numSections;
+    }
+  }
 
   if (estimatedBytes < 1024 * 1024) {
     sizeEl.textContent = `約 ${Math.round(estimatedBytes / 1024)} KB`;
