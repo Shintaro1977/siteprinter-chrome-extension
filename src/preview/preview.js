@@ -765,9 +765,25 @@ async function generatePDF() {
       }
     }
 
-    // Generate filename
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
-    const filename = `siteprinter_${timestamp}.pdf`;
+    // Generate filename: siteprinter_{title}_{YYYYMMDD_HHMMSS}.pdf
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const MAX_TITLE_LEN = 30;
+    const rawTitle = validScreenshots[0]?.title || '';
+    const sanitized = rawTitle
+      .replace(/[/\\:*?"<>|]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '')
+      .substring(0, MAX_TITLE_LEN)
+      .replace(/_$/, '');
+    const titlePart = sanitized
+      ? (validScreenshots.length > 1 ? `${sanitized}_他${validScreenshots.length - 1}件` : sanitized)
+      : '';
+    const filename = titlePart
+      ? `siteprinter_${titlePart}_${timestamp}.pdf`
+      : `siteprinter_${timestamp}.pdf`;
 
     // Download PDF
     pdf.save(filename);
