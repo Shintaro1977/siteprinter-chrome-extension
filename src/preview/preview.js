@@ -50,6 +50,7 @@ const downloadBtn = document.getElementById('downloadBtn');
 const screenshotList = document.getElementById('screenshotList');
 const loadingOverlay = document.getElementById('loadingOverlay');
 const loadingText = document.getElementById('loadingText');
+const loadingPercent = document.getElementById('loadingPercent');
 const showHeaderCheckbox = document.getElementById('showHeader');
 const showFooterCheckbox = document.getElementById('showFooter');
 const showBorderCheckbox = document.getElementById('showBorder');
@@ -605,6 +606,8 @@ async function generatePDF() {
         }
         isFirstPage = false;
         totalPageNum++;
+        updateLoadingProgress(totalPageNum, totalPages);
+        await new Promise((r) => setTimeout(r, 0));
 
         let y = PAGE_MARGIN;
 
@@ -803,6 +806,7 @@ function escapeHtml(text) {
 
 function showLoading(text) {
   loadingText.textContent = text;
+  loadingPercent.textContent = '';
   loadingOverlay.classList.remove('hidden');
   downloadBtn.disabled = true;
 }
@@ -810,4 +814,9 @@ function showLoading(text) {
 function hideLoading() {
   loadingOverlay.classList.add('hidden');
   downloadBtn.disabled = false;
+}
+
+function updateLoadingProgress(current, total) {
+  const pct = Math.round((current / total) * 100);
+  loadingPercent.textContent = `${pct}%`;
 }
