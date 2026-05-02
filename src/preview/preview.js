@@ -97,18 +97,30 @@ async function init() {
   loadJapaneseFont();
 
   // Load user plan and screenshots from storage
-  const data = await chrome.storage.local.get(['screenshots', 'capturedAt', 'capturedWithReload', 'userPlan', 'imageFormat']);
+  const data = await chrome.storage.local.get(['screenshots', 'capturedAt', 'capturedWithReload', 'userPlan', 'imageFormat', 'saveLastSettings', 'savedPreviewSettings']);
   screenshots = data.screenshots || [];
   capturedAt = data.capturedAt || new Date().toISOString();
   capturedWithReload = data.capturedWithReload || false;
   userPlan = data.userPlan || 'free';
-  settings.imageFormat = data.imageFormat || 'png';
+  settings.imageFormat = data.imageFormat || 'jpeg';
 
   // Set default settings based on plan
   if (userPlan === 'pro') {
     settings.columns = 2;
     settings.showHeader = true;
     settings.showFooter = true;
+  }
+
+  // Restore last saved settings if enabled
+  const saveLastSettings = data.saveLastSettings !== false; // default ON
+  if (saveLastSettings && data.savedPreviewSettings) {
+    const saved = data.savedPreviewSettings;
+    if (saved.paperSize) settings.paperSize = saved.paperSize;
+    if (saved.columns != null) settings.columns = saved.columns;
+    if (saved.overlap) settings.overlap = saved.overlap;
+    if (saved.showHeader != null) settings.showHeader = saved.showHeader;
+    if (saved.showFooter != null) settings.showFooter = saved.showFooter;
+    if (saved.showBorder != null) settings.showBorder = saved.showBorder;
   }
 
   if (screenshots.length === 0) {
@@ -129,11 +141,21 @@ async function init() {
   // Set UI controls to match current settings
   initializeUIControls();
 
-  // Show capture info
-  updateCaptureInfo();
+  // Show capture format
+  updateCaptureFormat();
 
   // Initial render
   renderPreview();
+}
+
+function updateCaptureFormat() {
+  const formatEl = document.getElementById('captureFormatInfo');
+  if (!formatEl) return;
+  const valid = screenshots.filter((s) => s.dataUrl);
+  const isJpeg = valid.length > 0
+    ? valid[0].dataUrl.startsWith('data:image/jpeg')
+    : settings.imageFormat === 'jpeg';
+  formatEl.textContent = isJpeg ? 'JPEG' : 'PNG';
 }
 
 function initializeUIControls() {
@@ -250,6 +272,21 @@ function handleDownloadClick() {
 
   // Check if user can download
   if (isPro || usingDefaultSettings) {
+    // Save current settings if enabled
+    chrome.storage.local.get({ saveLastSettings: true }).then(({ saveLastSettings }) => {
+      if (saveLastSettings) {
+        chrome.storage.local.set({
+          savedPreviewSettings: {
+            paperSize: settings.paperSize,
+            columns: settings.columns,
+            overlap: settings.overlap,
+            showHeader: settings.showHeader,
+            showFooter: settings.showFooter,
+            showBorder: settings.showBorder,
+          },
+        });
+      }
+    });
     // Allowed - generate PDF
     generatePDF();
   } else {
@@ -828,61 +865,6 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-function updateCaptureInfo() {
-  const formatEl = document.getElementById('captureFormatInfo');
-  const sizeEl = document.getElementById('estimatedSizeInfo');
-  if (!formatEl || !sizeEl) return;
-
-  const fmt = settings.imageFormat === 'jpeg' ? 'JPEG' : 'PNG';
-  formatEl.textContent = fmt;
-
-  const valid = screenshots.filter((s) => s.dataUrl);
-  if (valid.length === 0) {
-    sizeEl.textContent = '—';
-    return;
-  }
-
-  const MAX_CANVAS_WIDTH = 2000;
-  const paper = PAPER_SIZES[settings.paperSize];
-  const hH = settings.showHeader ? (HEADER_HEIGHT + CONTENT_SPACING) : 0;
-  const fH = settings.showFooter ? (FOOTER_HEIGHT + CONTENT_SPACING) : 0;
-  const cellGap = 2;
-  const contentW = paper.width - PAGE_MARGIN * 2;
-  const contentH = paper.height - PAGE_MARGIN * 2 - hH - fH;
-  const cellW = (contentW - (settings.columns - 1) * cellGap) / settings.columns;
-  const cellH = contentH;
-  const cellAspect = cellW / cellH;
-  const overlapRatio = OVERLAP_SIZES[settings.overlap];
-
-  let estimatedBytes = 80 * 1024; // PDF overhead
-
-  for (const s of valid) {
-    if (!s.dataUrl) continue;
-    const iw = s.width || 1920;
-    const ih = s.height || 3000;
-    const scale = Math.min(1, MAX_CANVAS_WIDTH / iw);
-
-    if (settings.imageFormat === 'jpeg') {
-      // JPEG: 再圧縮(0.35×) + 2000px へのスケールダウン(scale²)
-      const storedBytes = s.dataUrl.length / 1.37;
-      estimatedBytes += storedBytes * 0.34 * scale * scale;
-    } else {
-      // PNG: jsPDFはRGBA分離+SMask+PDFエンコードで実測の約3.6×/raw RGB → ×10.8
-      const canvasW = Math.round(iw * scale);
-      const cellContentH_px = iw / cellAspect;
-      const stepH_px = cellContentH_px * (1 - overlapRatio);
-      const numSections = Math.max(1, Math.ceil((ih - cellContentH_px * overlapRatio) / stepH_px));
-      const sectionH_px = Math.round(cellContentH_px * scale);
-      estimatedBytes += canvasW * sectionH_px * 10.8 * numSections;
-    }
-  }
-
-  if (estimatedBytes < 1024 * 1024) {
-    sizeEl.textContent = `約 ${Math.round(estimatedBytes / 1024)} KB`;
-  } else {
-    sizeEl.textContent = `約 ${(estimatedBytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-}
 
 function showLoading(text) {
   loadingText.textContent = text;

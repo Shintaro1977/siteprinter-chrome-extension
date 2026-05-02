@@ -1,5 +1,38 @@
 // Service Worker for SitePrinter Chrome Extension
 
+const CONTEXT_MENU_ID = 'siteprinter-capture';
+
+async function updateContextMenu() {
+  await chrome.contextMenus.removeAll();
+  const { contextMenuEnabled } = await chrome.storage.local.get({ contextMenuEnabled: true });
+  if (contextMenuEnabled) {
+    chrome.contextMenus.create({
+      id: CONTEXT_MENU_ID,
+      title: '印刷用PDFを作成',
+      contexts: ['page'],
+    });
+  }
+}
+
+chrome.runtime.onInstalled.addListener(updateContextMenu);
+chrome.runtime.onStartup.addListener(updateContextMenu);
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && 'contextMenuEnabled' in changes) {
+    updateContextMenu();
+  }
+});
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (info.menuItemId === CONTEXT_MENU_ID && tab) {
+    try {
+      await handleCaptureScreenshots([tab.id]);
+    } catch (error) {
+      console.error('Context menu capture failed:', error);
+    }
+  }
+});
+
 // Custom error for cancelled operations
 class CancelledError extends Error {
   constructor(message = 'キャプチャがキャンセルされました') {
@@ -221,7 +254,9 @@ async function captureFullPage(tabId) {
   await sleep(300);
 
   // Force reload if option is enabled
-  const { forceReload } = await chrome.storage.local.get({ forceReload: false });
+  const { forceReload, imageFormat } = await chrome.storage.local.get({ forceReload: false, imageFormat: 'jpeg' });
+  const captureFormat = imageFormat === 'png' ? 'png' : 'jpeg';
+  const mimeType = captureFormat === 'png' ? 'image/png' : 'image/jpeg';
   if (forceReload) {
     await new Promise((resolve) => {
       const listener = (updatedTabId, changeInfo) => {
@@ -347,7 +382,7 @@ async function captureFullPage(tabId) {
     console.log(`[SitePrinter] Page dimensions: ${width}x${height}px, viewport: ${clientWidth}x${clientHeight}px`);
 
     // Limits for screenshot capture
-    const MAX_TOTAL_HEIGHT = 150000; // Maximum total page height
+    const MAX_TOTAL_HEIGHT = 150000; // Maximum total page height (CSS px)
     const viewportHeight = clientHeight;
 
     let actualHeight = height;
@@ -400,11 +435,12 @@ async function captureFullPage(tabId) {
 
       // Capture visible tab
       const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, {
-        format: 'png',
+        format: captureFormat,
+        ...(captureFormat === 'jpeg' ? { quality: 92 } : {}),
       });
 
       // Get actual image dimensions
-      const base64Data = dataUrl.replace('data:image/png;base64,', '');
+      const base64Data = dataUrl.split(',')[1];
       const blob = await fetch(dataUrl).then(r => r.blob());
       const bitmap = await createImageBitmap(blob);
       const actualImageHeight = bitmap.height;
@@ -447,7 +483,7 @@ async function captureFullPage(tabId) {
 
     // Compute device pixel ratio from actual captured image vs CSS client dimensions.
     // captureVisibleTab returns physical pixels, but clientWidth is CSS (logical) pixels.
-    const dpr = (sections.length > 0 && clientWidth > 0) ? sections[0].width / clientWidth : 1;
+    const dpr = (sections.length > 0 && clientWidth > 0 && sections[0].width > 0) ? sections[0].width / clientWidth : 1;
     console.log(`[SitePrinter] Detected device pixel ratio: ${dpr}`);
 
     // Show processing state
@@ -459,18 +495,18 @@ async function captureFullPage(tabId) {
 
     if (sections.length === 1) {
       // Single section, no stitching needed
-      finalDataUrl = `data:image/png;base64,${sections[0].data}`;
+      finalDataUrl = `data:${mimeType};base64,${sections[0].data}`;
     } else {
       // Stitch multiple sections using physical pixel dimensions
       try {
         const physicalWidth = sections[0].width;
         const physicalTotalHeight = Math.round(actualHeight * dpr);
-        finalDataUrl = await stitchSections(sections, physicalWidth, physicalTotalHeight, dpr);
+        finalDataUrl = await stitchSections(sections, physicalWidth, physicalTotalHeight, dpr, mimeType);
         console.log(`[SitePrinter] Successfully stitched ${sections.length} sections`);
       } catch (error) {
         console.error('[SitePrinter] Failed to stitch sections:', error);
         // Fall back to first section
-        finalDataUrl = `data:image/png;base64,${sections[0].data}`;
+        finalDataUrl = `data:${mimeType};base64,${sections[0].data}`;
         console.warn('[SitePrinter] Using first section as fallback');
       }
     }
@@ -511,7 +547,7 @@ async function captureFullPage(tabId) {
 // Stitch multiple screenshot sections into a single image.
 // sections[i].offsetY must be the ACTUAL scroll position (CSS px) reported by the browser,
 // not the requested position, so that scroll-clamping at the page bottom is handled correctly.
-async function stitchSections(sections, width, totalHeight, dpr) {
+async function stitchSections(sections, width, totalHeight, dpr, mimeType = 'image/jpeg') {
   const physicalViewportHeight = sections[0].height; // physical px height of one viewport capture
 
   // Compute the physical overlap for section i based on actual scroll positions.
@@ -521,7 +557,8 @@ async function stitchSections(sections, width, totalHeight, dpr) {
     if (i === 0) return 0;
     const prevEndCSS = sections[i - 1].offsetY + physicalViewportHeight / dpr;
     const curStartCSS = sections[i].offsetY;
-    return Math.max(0, Math.round((prevEndCSS - curStartCSS) * dpr));
+    const overlap = Math.round((prevEndCSS - curStartCSS) * dpr);
+    return Number.isFinite(overlap) ? Math.max(0, overlap) : 0;
   }
 
   // Calculate stitched height using per-section actual overlaps
@@ -532,47 +569,65 @@ async function stitchSections(sections, width, totalHeight, dpr) {
 
   console.log(`[SitePrinter] Calculated stitched height: ${stitchedHeight}px (totalHeight: ${totalHeight}px)`);
 
-  const canvasHeight = Math.min(stitchedHeight, totalHeight);
+  const rawHeight = Math.min(stitchedHeight, totalHeight);
 
-  const canvas = new OffscreenCanvas(width, canvasHeight);
+  if (!(width > 0) || !(rawHeight > 0)) {
+    throw new Error(`Invalid canvas size: ${width}x${rawHeight} (stitchedHeight=${stitchedHeight}, totalHeight=${totalHeight}, dpr=${dpr})`);
+  }
+
+  // convertToBlob needs ~2× raw pixel bytes (canvas + PNG encoder buffer).
+  // Cap at 50M pixels (~400MB peak) to stay within Service Worker memory limits.
+  const MAX_CANVAS_PIXELS = 50_000_000;
+  const scale = (width * rawHeight) > MAX_CANVAS_PIXELS
+    ? Math.sqrt(MAX_CANVAS_PIXELS / (width * rawHeight))
+    : 1;
+  const canvasW = Math.max(1, Math.round(width * scale));
+  const canvasH = Math.max(1, Math.round(rawHeight * scale));
+
+  if (scale < 1) {
+    console.warn(`[SitePrinter] Canvas scaled to ${Math.round(scale * 100)}% (${canvasW}x${canvasH}px) due to memory limits`);
+  }
+
+  const canvas = new OffscreenCanvas(canvasW, canvasH);
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, width, canvasHeight);
+  ctx.fillRect(0, 0, canvasW, canvasH);
 
   let currentY = 0;
 
   for (let i = 0; i < sections.length; i++) {
     const section = sections[i];
 
-    const response = await fetch(`data:image/png;base64,${section.data}`);
+    const response = await fetch(`data:${mimeType};base64,${section.data}`);
     const blob = await response.blob();
     const imageBitmap = await createImageBitmap(blob);
 
     const actualOverlap = getActualOverlap(i);
-    let sourceY = actualOverlap;
-    let sourceHeight = imageBitmap.height - actualOverlap;
-    const destY = currentY;
+    const sourceY = actualOverlap;
+    const sourceH = imageBitmap.height - actualOverlap;
+    const destY = Math.round(currentY * scale);
+    const destH = Math.round(sourceH * scale);
+    const available = canvasH - destY;
 
-    const availableHeight = canvasHeight - destY;
-    if (sourceHeight > availableHeight) {
-      console.warn(`[SitePrinter] Section ${i + 1} clipped: ${sourceHeight}px -> ${availableHeight}px`);
-      sourceHeight = availableHeight;
+    if (sourceH > 0 && destH > 0 && available > 0) {
+      const drawDestH = Math.min(destH, available);
+      const drawSrcH = Math.min(Math.round(drawDestH / scale), imageBitmap.height - sourceY);
+      console.log(`[SitePrinter] Drawing section ${i + 1}: src(0,${sourceY},${imageBitmap.width},${drawSrcH}) -> dest(0,${destY},${canvasW},${drawDestH}) [overlap:${actualOverlap}px, scale:${scale.toFixed(2)}]`);
+      ctx.drawImage(imageBitmap, 0, sourceY, imageBitmap.width, drawSrcH, 0, destY, canvasW, drawDestH);
     }
 
-    console.log(`[SitePrinter] Drawing section ${i + 1}: source(0,${sourceY},${imageBitmap.width},${sourceHeight}) -> dest(0,${destY},${width},${sourceHeight}) [overlap:${actualOverlap}px]`);
-
-    if (sourceHeight > 0) {
-      ctx.drawImage(imageBitmap, 0, sourceY, imageBitmap.width, sourceHeight, 0, destY, width, sourceHeight);
-      currentY += sourceHeight;
-    }
-
+    currentY += sourceH;
     imageBitmap.close();
   }
 
-  console.log(`[SitePrinter] Final stitched position: ${currentY}px / ${canvasHeight}px`);
+  console.log(`[SitePrinter] Final stitched: ${canvasW}x${canvasH}px (scale=${scale.toFixed(2)})`);
+
 
   // Convert canvas to blob and then to base64
-  const blob = await canvas.convertToBlob({ type: 'image/png' });
+  const blob = await canvas.convertToBlob({
+    type: mimeType,
+    ...(mimeType === 'image/jpeg' ? { quality: 0.92 } : {}),
+  });
   const arrayBuffer = await blob.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
 
@@ -585,7 +640,7 @@ async function stitchSections(sections, width, totalHeight, dpr) {
   }
   const base64 = btoa(binary);
 
-  return `data:image/png;base64,${base64}`;
+  return `data:${mimeType};base64,${base64}`;
 }
 
 function sleep(ms) {
