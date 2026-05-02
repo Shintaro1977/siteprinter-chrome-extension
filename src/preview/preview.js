@@ -532,6 +532,13 @@ async function generatePDF() {
       format: settings.paperSize,
     });
 
+    // Set PDF metadata
+    pdf.setProperties({
+      title: validScreenshots[0]?.title || 'SitePrinter',
+      author: 'SitePrinter extension',
+      creator: 'SitePrinter extension',
+    });
+
     // Register and set Japanese font
     const hasJapaneseFont = registerJapaneseFont(pdf, fontBase64);
 
@@ -624,7 +631,7 @@ async function generatePDF() {
           pdf.text(title, titleX, y + 5, { maxWidth: maxTitleWidth });
 
           pdf.setFontSize(6);
-          pdf.setTextColor(100, 116, 139);
+          pdf.setTextColor(71, 85, 105);
           const url = screenshot.url ? screenshot.url.substring(0, 90) : '';
           pdf.text(url, PAGE_MARGIN, y + 10);
 
@@ -701,7 +708,7 @@ async function generatePDF() {
 
             // Add section number label below image with spacing
             pdf.setFontSize(5);
-            pdf.setTextColor(100, 116, 139);
+            pdf.setTextColor(71, 85, 105);
             const sectionLabel = `[${currentSectionNum}/${totalSections}]`;
             pdf.text(sectionLabel, cellX + cellWidth / 2, cellY + imageHeight + labelSpacing + 1.5, { align: 'center' });
           }
@@ -725,7 +732,7 @@ async function generatePDF() {
           // Footer starts after content + spacing, or at bottom - margin - footer height
           const footerY = paperHeight - PAGE_MARGIN - FOOTER_HEIGHT + 4;
           pdf.setFontSize(6);
-          pdf.setTextColor(148, 163, 184);
+          pdf.setTextColor(100, 116, 139);
 
           const date = new Date(capturedAt);
           const dateStr = date.toLocaleDateString('ja-JP', {
