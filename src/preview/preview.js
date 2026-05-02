@@ -850,13 +850,13 @@ function updateCaptureInfo() {
       const storedBytes = s.dataUrl.length / 1.37;
       estimatedBytes += storedBytes * 0.34 * scale * scale;
     } else {
-      // PNG: jsPDFが内部でRGBほぼ非圧縮で埋め込むためセクション数 × rawピクセル数で推定
+      // PNG: jsPDFはRGBA分離+SMask+PDFエンコードで実測の約3.6×/raw RGB → ×10.8
       const canvasW = Math.round(iw * scale);
       const cellContentH_px = iw / cellAspect;
       const stepH_px = cellContentH_px * (1 - overlapRatio);
       const numSections = Math.max(1, Math.ceil((ih - cellContentH_px * overlapRatio) / stepH_px));
       const sectionH_px = Math.round(cellContentH_px * scale);
-      estimatedBytes += canvasW * sectionH_px * 3 * numSections;
+      estimatedBytes += canvasW * sectionH_px * 10.8 * numSections;
     }
   }
 
