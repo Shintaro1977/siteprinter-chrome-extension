@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
   // Stripe カスタマーポータルセッションを作成
   const session = await stripe.billingPortal.sessions.create({
     customer: subscription.stripe_customer_id,
-    return_url: 'https://extension.siteprinter.jp/account/',
+    return_url: 'https://extension.siteprinter.jp/',
   });
 
   return new Response(JSON.stringify({ url: session.url }), {
