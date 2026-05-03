@@ -77,6 +77,10 @@ Deno.serve(async (req) => {
       return new Response('Server Error', { status: 500 });
     }
 
+    await supabase.auth.admin.updateUserById(user.id, {
+      app_metadata: { plan: 'pro' },
+    });
+
     console.log('Subscription activated for:', email);
   }
 
@@ -116,6 +120,12 @@ Deno.serve(async (req) => {
     const subscription = event.data.object as Stripe.Subscription;
     const customerId = subscription.customer as string;
 
+    const { data: subData, error: subFetchError } = await supabase
+      .from('subscriptions')
+      .select('user_id')
+      .eq('stripe_customer_id', customerId)
+      .single();
+
     const { error } = await supabase
       .from('subscriptions')
       .update({ status: 'canceled', cancel_at_period_end: false, updated_at: new Date().toISOString() })
@@ -124,6 +134,12 @@ Deno.serve(async (req) => {
     if (error) {
       console.error('Failed to cancel subscription:', error);
       return new Response('Server Error', { status: 500 });
+    }
+
+    if (!subFetchError && subData?.user_id) {
+      await supabase.auth.admin.updateUserById(subData.user_id, {
+        app_metadata: { plan: 'free' },
+      });
     }
 
     console.log('Subscription canceled for customer:', customerId);
