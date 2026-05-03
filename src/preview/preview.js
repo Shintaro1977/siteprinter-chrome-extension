@@ -499,7 +499,7 @@ function renderFooter(pageNum, totalPages) {
     minute: '2-digit',
   });
 
-  const reloadLabel = capturedWithReload ? ' (取得時リロードON)' : '';
+  const reloadLabel = capturedWithReload ? ' (再読込取得)' : '';
 
   return `
     <div class="preview-page-footer">
@@ -790,7 +790,7 @@ async function generatePDF() {
             minute: '2-digit',
           });
 
-          const reloadLabel = capturedWithReload ? ' (取得時リロードON)' : '';
+          const reloadLabel = capturedWithReload ? ' (再読込取得)' : '';
           pdf.text(`取得日時: ${dateStr}${reloadLabel}`, PAGE_MARGIN, footerY);
           pdf.text(`${totalPageNum} / ${totalPages}`, paperWidth / 2, footerY, { align: 'center' });
 

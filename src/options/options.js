@@ -67,7 +67,7 @@ async function init() {
   const forceReloadToggle = document.getElementById('forceReloadToggle');
   forceReloadToggle.addEventListener('change', async () => {
     await chrome.storage.local.set({ forceReload: forceReloadToggle.checked });
-    showToast(forceReloadToggle.checked ? '強制リロードをONにしました' : '強制リロードをOFFにしました');
+    showToast(forceReloadToggle.checked ? '再読込取得をONにしました' : '再読込取得をOFFにしました');
   });
 
   // 右クリックメニュー
