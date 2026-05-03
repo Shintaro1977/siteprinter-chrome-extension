@@ -6,12 +6,14 @@
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build",
-    "build:website": "vite build --config vite.website.config.js",
-    "clean": "rm -rf dist dist-website",
+    "build:release": "vite build --mode release",
+    "package:ext": "npm run build:release && zip -r siteprinter-extension.zip dist/ --exclude '*/.DS_Store'",
+    "clean": "rm -rf dist dist-website siteprinter-extension.zip",
     "generate-icons": "node scripts/generate-icons.js"
   },
   "devDependencies": {
     "sharp": "^0.34.5",
+    "terser": "^5.46.2",
     "vite": "^5.4.0",
     "vite-plugin-static-copy": "^1.0.6"
   },

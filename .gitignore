@@ -35,3 +35,4 @@ coverage/
 # User uploaded files
 *.png
 !assets/icons/*.png
+siteprinter-extension.zip

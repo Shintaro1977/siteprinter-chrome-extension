@@ -2,7 +2,10 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const isRelease = mode === 'release';
+
+  return {
   base: './',
   build: {
     outDir: 'dist',
@@ -36,7 +39,22 @@ export default defineConfig({
       },
     },
     target: 'esnext',
-    minify: false,
+    minify: isRelease ? 'terser' : false,
+    ...(isRelease && {
+      terserOptions: {
+        compress: {
+          drop_console: true,
+          drop_debugger: true,
+          passes: 2,
+        },
+        mangle: {
+          toplevel: true,
+        },
+        format: {
+          comments: false,
+        },
+      },
+    }),
   },
   plugins: [
     viteStaticCopy({
@@ -61,4 +79,5 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
+  };
 });
