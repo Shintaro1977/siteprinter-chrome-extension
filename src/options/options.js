@@ -235,36 +235,62 @@ async function showMainView(user) {
 
   accountEmail.textContent = user.email;
 
-  const { data } = await supabase
-    .from('subscriptions')
-    .select('status, cancel_at_period_end, current_period_end')
-    .eq('user_id', user.id)
-    .single();
+  await loadPlanInfo(user);
 
-  const isPro = data?.status === 'active';
+  document.getElementById('retryPlanBtn').addEventListener('click', () => loadPlanInfo(user));
+}
 
-  planBadge.textContent = isPro ? 'Pro' : '無料';
-  planBadge.className = `plan-badge ${isPro ? 'plan-pro' : 'plan-free'}`;
-  accountPlanBadge.textContent = isPro ? 'Pro' : '無料';
-  accountPlanBadge.className = `plan-badge ${isPro ? 'plan-pro-card' : 'plan-free-card'}`;
-
+async function loadPlanInfo(user) {
+  const planFetchError = document.getElementById('planFetchError');
   const upgradeBanner = document.getElementById('upgradeBanner');
-  upgradeBanner.classList.toggle('hidden', isPro);
-  manageBtn.classList.toggle('hidden', !isPro);
-
-  // 解約予約中の利用期限を表示
   const periodEndRow = document.getElementById('periodEndRow');
   const periodEndText = document.getElementById('periodEndText');
-  if (isPro && data?.cancel_at_period_end && data?.current_period_end) {
-    const endDate = new Date(data.current_period_end);
-    const formatted = `${endDate.getFullYear()}/${endDate.getMonth() + 1}/${endDate.getDate()} まで利用可能（解約予約済み）`;
-    periodEndText.textContent = formatted;
-    periodEndRow.classList.remove('hidden');
-  } else {
-    periodEndRow.classList.add('hidden');
-  }
 
-  await chrome.storage.local.set({ userPlan: isPro ? 'pro' : 'free', userEmail: user.email });
+  planFetchError.classList.add('hidden');
+
+  try {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('status, cancel_at_period_end, current_period_end')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    const isPro = data?.status === 'active';
+
+    planBadge.textContent = isPro ? 'Pro' : '無料';
+    planBadge.className = `plan-badge ${isPro ? 'plan-pro' : 'plan-free'}`;
+    accountPlanBadge.textContent = isPro ? 'Pro' : '無料';
+    accountPlanBadge.className = `plan-badge ${isPro ? 'plan-pro-card' : 'plan-free-card'}`;
+
+    upgradeBanner.classList.toggle('hidden', isPro);
+    manageBtn.classList.toggle('hidden', !isPro);
+
+    if (isPro && data?.cancel_at_period_end && data?.current_period_end) {
+      const endDate = new Date(data.current_period_end);
+      const formatted = `${endDate.getFullYear()}/${endDate.getMonth() + 1}/${endDate.getDate()} まで利用可能（解約予約済み）`;
+      periodEndText.textContent = formatted;
+      periodEndRow.classList.remove('hidden');
+    } else {
+      periodEndRow.classList.add('hidden');
+    }
+
+    await chrome.storage.local.set({ userPlan: isPro ? 'pro' : 'free', userEmail: user.email });
+
+  } catch (err) {
+    console.error('[Plan] Failed to fetch plan info:', err);
+
+    // エラー時はどちらのボタンも表示しない
+    upgradeBanner.classList.add('hidden');
+    manageBtn.classList.add('hidden');
+    periodEndRow.classList.add('hidden');
+    planBadge.textContent = '-';
+    planBadge.className = 'plan-badge plan-free';
+    accountPlanBadge.textContent = '-';
+    accountPlanBadge.className = 'plan-badge plan-free-card';
+    planFetchError.classList.remove('hidden');
+  }
 }
 
 function showAuthView() {
