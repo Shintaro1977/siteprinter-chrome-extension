@@ -120,6 +120,10 @@ class CaptureController {
       // Disable animations
       this.disableAnimations();
 
+      // Disable smooth scroll to prevent scroll-behavior: smooth from causing
+      // the viewport to lag behind during sequential scroll-and-capture
+      this.disableScrollBehavior();
+
       // Disable hover effects so mouse-over styling doesn't appear in screenshots
       this.disableHoverEffects();
 
@@ -165,6 +169,14 @@ class CaptureController {
         transition-delay: 0s !important;
       }
     `;
+    document.head.appendChild(style);
+    this.originalStyles.animations.push(style);
+  }
+
+  disableScrollBehavior() {
+    const style = document.createElement('style');
+    style.id = 'siteprinter-scroll-behavior-disable';
+    style.textContent = `*, *::before, *::after { scroll-behavior: auto !important; }`;
     document.head.appendChild(style);
     this.originalStyles.animations.push(style);
   }

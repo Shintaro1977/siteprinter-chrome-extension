@@ -52,6 +52,8 @@ async function init() {
 
   await loadImageFormatSetting();
   await loadForceReloadSetting();
+  await loadContextMenuSetting();
+  await loadSaveLastSettingsSetting();
 
   // 画像形式
   document.querySelectorAll('input[name="imageFormat"]').forEach((radio) => {
@@ -66,6 +68,23 @@ async function init() {
   forceReloadToggle.addEventListener('change', async () => {
     await chrome.storage.local.set({ forceReload: forceReloadToggle.checked });
     showToast(forceReloadToggle.checked ? '強制リロードをONにしました' : '強制リロードをOFFにしました');
+  });
+
+  // 右クリックメニュー
+  const contextMenuToggle = document.getElementById('contextMenuToggle');
+  contextMenuToggle.addEventListener('change', async () => {
+    await chrome.storage.local.set({ contextMenuEnabled: contextMenuToggle.checked });
+    showToast(contextMenuToggle.checked ? '右クリックメニューをONにしました' : '右クリックメニューをOFFにしました');
+  });
+
+  // 前回の設定を保存する
+  const saveLastSettingsToggle = document.getElementById('saveLastSettingsToggle');
+  saveLastSettingsToggle.addEventListener('change', async () => {
+    await chrome.storage.local.set({ saveLastSettings: saveLastSettingsToggle.checked });
+    if (!saveLastSettingsToggle.checked) {
+      await chrome.storage.local.remove('savedPreviewSettings');
+    }
+    showToast(saveLastSettingsToggle.checked ? '設定の保存をONにしました' : '設定の保存をOFFにしました');
   });
 
   // セッション確認
@@ -267,6 +286,16 @@ async function loadImageFormatSetting() {
 async function loadForceReloadSetting() {
   const { forceReload } = await chrome.storage.local.get({ forceReload: false });
   document.getElementById('forceReloadToggle').checked = forceReload;
+}
+
+async function loadContextMenuSetting() {
+  const { contextMenuEnabled } = await chrome.storage.local.get({ contextMenuEnabled: true });
+  document.getElementById('contextMenuToggle').checked = contextMenuEnabled;
+}
+
+async function loadSaveLastSettingsSetting() {
+  const { saveLastSettings } = await chrome.storage.local.get({ saveLastSettings: true });
+  document.getElementById('saveLastSettingsToggle').checked = saveLastSettings;
 }
 
 async function signInWithGoogle() {

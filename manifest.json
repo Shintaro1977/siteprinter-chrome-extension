@@ -23,7 +23,8 @@
     "scripting",
     "storage",
     "unlimitedStorage",
-    "identity"
+    "identity",
+    "contextMenus"
   ],
   "host_permissions": [
     "<all_urls>"
