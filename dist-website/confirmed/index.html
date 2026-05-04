@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>メール認証完了 — SitePrinter extension</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      background: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+      padding: 48px 40px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+    }
+    .icon { font-size: 56px; margin-bottom: 20px; }
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 12px;
+      letter-spacing: -.02em;
+    }
+    p {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.7;
+      margin-bottom: 8px;
+    }
+    .step {
+      background: #f1f5f9;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin: 24px 0;
+      text-align: left;
+    }
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.5;
+      padding: 6px 0;
+    }
+    .step-num {
+      width: 20px;
+      height: 20px;
+      background: #2563eb;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 10px 24px;
+      background: #2563eb;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .footer-link {
+      display: block;
+      margin-top: 24px;
+      font-size: 12px;
+      color: #94a3b8;
+      text-decoration: none;
+    }
+    .error-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #dc2626;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="card" id="successCard">
+    <div class="icon">✅</div>
+    <h1>メール認証が完了しました</h1>
+    <p>SitePrinter extension のアカウントが有効になりました。</p>
+
+    <div class="step">
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <span>Chrome または Edge のツールバーにある SitePrinter extension のアイコンをクリック</span>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <span>設定画面を開き、メールアドレスとパスワードでログイン</span>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <span>ご利用開始！</span>
+      </div>
+    </div>
+
+    <a href="/" class="btn">トップページへ</a>
+    <div class="error-box" id="errorBox"></div>
+    <a href="/" class="footer-link">extension.siteprinter.jp</a>
+  </div>
+
+  <script>
+    // URLのハッシュまたはクエリにエラーが含まれる場合に表示
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const searchParams = new URLSearchParams(window.location.search);
+    const error = params.get('error_description') || searchParams.get('error_description');
+    if (error) {
+      const box = document.getElementById('errorBox');
+      box.textContent = 'リンクが無効または期限切れです。再度サインアップするか、確認メールを再送信してください。';
+      box.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
