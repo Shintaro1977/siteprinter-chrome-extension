@@ -38,8 +38,16 @@ function switchAuthTab(tab) {
   document.getElementById('tabSignup').classList.toggle('active', !isLogin);
   document.getElementById('loginPane').classList.toggle('hidden', !isLogin);
   document.getElementById('signupPane').classList.toggle('hidden', isLogin);
+  document.getElementById('emailSentPane').classList.add('hidden');
   loginError.classList.add('hidden');
   signupError.classList.add('hidden');
+}
+
+function showEmailSentPane(email) {
+  document.getElementById('loginPane').classList.add('hidden');
+  document.getElementById('signupPane').classList.add('hidden');
+  document.getElementById('emailSentPane').classList.remove('hidden');
+  document.getElementById('emailSentAddress').textContent = email;
 }
 
 async function init() {
@@ -148,8 +156,10 @@ async function init() {
     const btn = loginForm.querySelector('button[type="submit"]');
     const email = document.getElementById('emailInput').value;
     const password = document.getElementById('passwordInput').value;
+    const resendBtn = document.getElementById('resendConfirmBtn');
 
     loginError.classList.add('hidden');
+    resendBtn.classList.add('hidden');
     btn.disabled = true;
     btn.textContent = 'ログイン中...';
 
@@ -158,7 +168,22 @@ async function init() {
     btn.disabled = false;
     btn.textContent = 'ログイン';
     if (error) {
-      loginError.textContent = 'メールアドレスまたはパスワードが正しくありません';
+      if (error.message === 'Email not confirmed') {
+        loginError.textContent = 'メールアドレスの確認が完了していません。受信ボックスをご確認ください。';
+        resendBtn.classList.remove('hidden');
+        resendBtn.onclick = async () => {
+          resendBtn.disabled = true;
+          resendBtn.textContent = '送信中...';
+          await supabase.auth.resend({ type: 'signup', email });
+          resendBtn.textContent = '再送信しました';
+          setTimeout(() => {
+            resendBtn.disabled = false;
+            resendBtn.textContent = '確認メールを再送信';
+          }, 3000);
+        };
+      } else {
+        loginError.textContent = 'メールアドレスまたはパスワードが正しくありません';
+      }
       loginError.classList.remove('hidden');
     }
   });
@@ -182,10 +207,27 @@ async function init() {
       signupError.textContent = error.message;
       signupError.classList.remove('hidden');
     } else {
-      signupError.textContent = '確認メールを送信しました。メールを確認してください。';
-      signupError.style.color = '#16a34a';
-      signupError.classList.remove('hidden');
+      showEmailSentPane(email);
     }
+  });
+
+  // 確認メール送信済みパネルのボタン
+  document.getElementById('resendEmailBtn').addEventListener('click', async () => {
+    const email = document.getElementById('emailSentAddress').textContent;
+    const btn = document.getElementById('resendEmailBtn');
+    btn.disabled = true;
+    btn.textContent = '送信中...';
+    await supabase.auth.resend({ type: 'signup', email });
+    btn.textContent = '再送信しました';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = '確認メールを再送信';
+    }, 3000);
+  });
+
+  document.getElementById('backToLoginBtn').addEventListener('click', () => {
+    document.getElementById('emailSentPane').classList.add('hidden');
+    switchAuthTab('login');
   });
 
   // サブスクリプション管理（解約など）

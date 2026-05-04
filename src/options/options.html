@@ -178,6 +178,7 @@
                   <input type="password" id="passwordInput" class="form-input" placeholder="パスワードを入力" required autocomplete="current-password">
                 </div>
                 <p id="loginError" class="form-error hidden"></p>
+                <button id="resendConfirmBtn" type="button" class="btn btn-secondary hidden">確認メールを再送信</button>
                 <button type="submit" class="btn btn-primary">ログイン</button>
               </form>
             </div>
@@ -196,6 +197,18 @@
                 <p id="signupError" class="form-error hidden"></p>
                 <button type="submit" class="btn btn-primary">アカウントを作成</button>
               </form>
+            </div>
+
+            <!-- 確認メール送信済みパネル -->
+            <div id="emailSentPane" class="auth-pane hidden">
+              <div class="email-sent-box">
+                <div class="email-sent-icon">✉️</div>
+                <p class="email-sent-title">確認メールを送信しました</p>
+                <p id="emailSentAddress" class="email-sent-address"></p>
+                <p class="email-sent-desc">メール内のリンクをクリックして、アカウントを有効化してください。</p>
+                <button id="resendEmailBtn" type="button" class="btn btn-secondary">確認メールを再送信</button>
+                <button id="backToLoginBtn" type="button" class="btn-text-link">ログイン画面に戻る</button>
+              </div>
             </div>
 
           </div>
