@@ -77,9 +77,18 @@ Deno.serve(async (req) => {
       return new Response('Server Error', { status: 500 });
     }
 
-    await supabase.auth.admin.updateUserById(user.id, {
-      app_metadata: { plan: 'pro' },
-    });
+    // grantユーザーはapp_metadataを上書きしない
+    const { data: grant } = await supabase
+      .from('user_grants')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!grant) {
+      await supabase.auth.admin.updateUserById(user.id, {
+        app_metadata: { plan: 'pro' },
+      });
+    }
 
     console.log('Subscription activated for:', email);
   }
@@ -137,9 +146,18 @@ Deno.serve(async (req) => {
     }
 
     if (!subFetchError && subData?.user_id) {
-      await supabase.auth.admin.updateUserById(subData.user_id, {
-        app_metadata: { plan: 'free' },
-      });
+      // grantユーザーはapp_metadataを上書きしない
+      const { data: grant } = await supabase
+        .from('user_grants')
+        .select('id')
+        .eq('user_id', subData.user_id)
+        .single();
+
+      if (!grant) {
+        await supabase.auth.admin.updateUserById(subData.user_id, {
+          app_metadata: { plan: 'free' },
+        });
+      }
     }
 
     console.log('Subscription canceled for customer:', customerId);

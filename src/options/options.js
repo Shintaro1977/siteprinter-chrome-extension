@@ -249,6 +249,30 @@ async function loadPlanInfo(user) {
   planFetchError.classList.add('hidden');
 
   try {
+    // grantを優先チェック（有効期限内のgrantがあればProとして扱う）
+    const { data: grantData, error: grantError } = await supabase
+      .from('user_grants')
+      .select('plan, expires_at')
+      .eq('user_id', user.id)
+      .single();
+
+    if (grantError && grantError.code !== 'PGRST116') throw grantError;
+
+    const hasActiveGrant = grantData?.plan === 'pro' &&
+      (!grantData.expires_at || new Date(grantData.expires_at) > new Date());
+
+    if (hasActiveGrant) {
+      planBadge.textContent = 'Pro';
+      planBadge.className = 'plan-badge plan-pro';
+      accountPlanBadge.textContent = 'Pro';
+      accountPlanBadge.className = 'plan-badge plan-pro-card';
+      upgradeBanner.classList.add('hidden');
+      manageBtn.classList.add('hidden');
+      periodEndRow.classList.add('hidden');
+      await chrome.storage.local.set({ userPlan: 'pro', userEmail: user.email });
+      return;
+    }
+
     const { data, error } = await supabase
       .from('subscriptions')
       .select('status, cancel_at_period_end, current_period_end')
