@@ -13,6 +13,7 @@ const accountPlanBadge = document.getElementById('accountPlanBadge');
 const upgradeBtn = document.getElementById('upgradeBtn');
 const manageBtn = document.getElementById('manageBtn');
 const logoutBtn = document.getElementById('logoutBtn');
+const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 const refreshBtn = document.getElementById('refreshBtn');
 const toast = document.getElementById('toast');
 const toastMessage = document.getElementById('toastMessage');
@@ -39,6 +40,7 @@ function switchAuthTab(tab) {
   document.getElementById('loginPane').classList.toggle('hidden', !isLogin);
   document.getElementById('signupPane').classList.toggle('hidden', isLogin);
   document.getElementById('emailSentPane').classList.add('hidden');
+  document.getElementById('forgotPane').classList.add('hidden');
   loginError.classList.add('hidden');
   signupError.classList.add('hidden');
 }
@@ -199,12 +201,22 @@ async function init() {
     btn.disabled = true;
     btn.textContent = '作成中...';
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
 
     btn.disabled = false;
     btn.textContent = 'アカウントを作成';
     if (error) {
-      signupError.textContent = error.message;
+      let msg = error.message;
+      if (msg === 'Failed to fetch' || (error.status && error.status >= 500)) {
+        msg = 'サーバーエラーが発生しました。しばらくしてから再度お試しください。';
+      } else if (msg.includes('Password should be at least') || msg.includes('password')) {
+        msg = 'パスワードは6文字以上で入力してください。';
+      }
+      signupError.textContent = msg;
+      signupError.classList.remove('hidden');
+    } else if (!data.user || data.user.identities?.length === 0) {
+      // userがnull または identitiesが空＝既存アカウント（メール確認済み・未確認どちらも）
+      signupError.textContent = 'このメールアドレスはすでに登録されています。ログインしてください。';
       signupError.classList.remove('hidden');
     } else {
       showEmailSentPane(email);
@@ -227,6 +239,47 @@ async function init() {
 
   document.getElementById('backToLoginBtn').addEventListener('click', () => {
     document.getElementById('emailSentPane').classList.add('hidden');
+    switchAuthTab('login');
+  });
+
+  // パスワードリセット
+  document.getElementById('forgotPasswordLink').addEventListener('click', () => {
+    document.getElementById('loginPane').classList.add('hidden');
+    document.getElementById('forgotPane').classList.remove('hidden');
+    document.getElementById('forgotError').classList.add('hidden');
+    document.getElementById('forgotSuccess').classList.add('hidden');
+    const btn = document.getElementById('forgotSubmitBtn');
+    btn.style.display = '';
+    btn.disabled = false;
+    btn.textContent = 'リセットメールを送信';
+  });
+
+  document.getElementById('forgotSubmitBtn').addEventListener('click', async () => {
+    const email = document.getElementById('forgotEmailInput').value.trim();
+    const btn = document.getElementById('forgotSubmitBtn');
+    const errorEl = document.getElementById('forgotError');
+    const successEl = document.getElementById('forgotSuccess');
+    if (!email) return;
+    errorEl.classList.add('hidden');
+    successEl.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = '送信中...';
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://extension.siteprinter.jp/reset-password/',
+    });
+    if (error) {
+      errorEl.textContent = 'エラーが発生しました。しばらくしてから再試行してください。';
+      errorEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'リセットメールを送信';
+    } else {
+      successEl.classList.remove('hidden');
+      btn.style.display = 'none';
+    }
+  });
+
+  document.getElementById('backToLoginFromForgotBtn').addEventListener('click', () => {
+    document.getElementById('forgotPane').classList.add('hidden');
     switchAuthTab('login');
   });
 
@@ -260,10 +313,48 @@ async function init() {
     await supabase.auth.signOut();
   });
 
+  // アカウント削除
+  deleteAccountBtn.addEventListener('click', async () => {
+    const confirmed = window.confirm(
+      'アカウントを削除しますか？\n\nこの操作は取り消せません。アカウント情報およびサブスクリプション情報がすべて削除されます。'
+    );
+    if (!confirmed) return;
+
+    deleteAccountBtn.disabled = true;
+    deleteAccountBtn.textContent = '削除中...';
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('セッションが見つかりません');
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const res = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'アカウントの削除に失敗しました');
+      }
+
+      await supabase.auth.signOut();
+      showToast('アカウントを削除しました');
+    } catch (err) {
+      console.error('[DeleteAccount]', err);
+      showToast('エラー: ' + (err.message || 'アカウントの削除に失敗しました'));
+      deleteAccountBtn.disabled = false;
+      deleteAccountBtn.textContent = 'アカウントを削除';
+    }
+  });
+
   // アップグレード（ユーザーIDとメールをStripeに渡して確実に紐づける）
   upgradeBtn.addEventListener('click', async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    const baseUrl = 'https://buy.stripe.com/test_4gMfZibmh2GQdY795H7kc00';
+    const baseUrl = import.meta.env.VITE_STRIPE_PAYMENT_LINK;
     const params = new URLSearchParams();
     if (session?.user?.id) params.set('client_reference_id', session.user.id);
     if (session?.user?.email) params.set('prefilled_email', session.user.email);
@@ -290,15 +381,22 @@ async function loadPlanInfo(user) {
 
   planFetchError.classList.add('hidden');
 
+  // getUser()をtry-catchの外で実行し、catchブロックでも最新のapp_metadataを参照できるようにする
+  let resolvedUser = user;
   try {
-    // grantを優先チェック（有効期限内のgrantがあればProとして扱う）
-    const { data: grantData, error: grantError } = await supabase
+    const { data: { user: freshUser } } = await supabase.auth.getUser();
+    if (freshUser) resolvedUser = freshUser;
+  } catch {
+    // getUser失敗時はキャッシュのuserを使用
+  }
+
+  try {
+    // grantを優先チェック（エラーはgrantなしとして扱い、throwしない）
+    const { data: grantData } = await supabase
       .from('user_grants')
       .select('plan, expires_at')
-      .eq('user_id', user.id)
-      .single();
-
-    if (grantError && grantError.code !== 'PGRST116') throw grantError;
+      .eq('user_id', resolvedUser.id)
+      .maybeSingle();
 
     const hasActiveGrant = grantData?.plan === 'pro' &&
       (!grantData.expires_at || new Date(grantData.expires_at) > new Date());
@@ -311,19 +409,20 @@ async function loadPlanInfo(user) {
       upgradeBanner.classList.add('hidden');
       manageBtn.classList.add('hidden');
       periodEndRow.classList.add('hidden');
-      await chrome.storage.local.set({ userPlan: 'pro', userEmail: user.email });
+      await chrome.storage.local.set({ userPlan: 'pro', userEmail: resolvedUser.email });
       return;
     }
 
     const { data, error } = await supabase
       .from('subscriptions')
       .select('status, cancel_at_period_end, current_period_end')
-      .eq('user_id', user.id)
-      .single();
+      .eq('user_id', resolvedUser.id)
+      .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    if (error) throw error;
 
-    const isPro = data?.status === 'active';
+    // subscriptionsテーブル または app_metadata のどちらかでProと判定
+    const isPro = data?.status === 'active' || resolvedUser.app_metadata?.plan === 'pro';
 
     planBadge.textContent = isPro ? 'Pro' : '無料';
     planBadge.className = `plan-badge ${isPro ? 'plan-pro' : 'plan-free'}`;
@@ -342,20 +441,34 @@ async function loadPlanInfo(user) {
       periodEndRow.classList.add('hidden');
     }
 
-    await chrome.storage.local.set({ userPlan: isPro ? 'pro' : 'free', userEmail: user.email });
+    await chrome.storage.local.set({ userPlan: isPro ? 'pro' : 'free', userEmail: resolvedUser.email });
 
   } catch (err) {
     console.error('[Plan] Failed to fetch plan info:', err);
 
-    // エラー時はどちらのボタンも表示しない
-    upgradeBanner.classList.add('hidden');
-    manageBtn.classList.add('hidden');
-    periodEndRow.classList.add('hidden');
-    planBadge.textContent = '-';
-    planBadge.className = 'plan-badge plan-free';
-    accountPlanBadge.textContent = '-';
-    accountPlanBadge.className = 'plan-badge plan-free-card';
-    planFetchError.classList.remove('hidden');
+    const isNetworkError = err?.message === 'Failed to fetch' || err?.message?.includes('fetch');
+    if (isNetworkError) {
+      // ネットワーク切断時はエラーを表示
+      upgradeBanner.classList.add('hidden');
+      manageBtn.classList.add('hidden');
+      periodEndRow.classList.add('hidden');
+      planBadge.textContent = '-';
+      planBadge.className = 'plan-badge plan-free';
+      accountPlanBadge.textContent = '-';
+      accountPlanBadge.className = 'plan-badge plan-free-card';
+      planFetchError.classList.remove('hidden');
+    } else {
+      // subscriptionsテーブルのエラー時はapp_metadataにフォールバック（resolvedUserを使用）
+      const isPro = resolvedUser.app_metadata?.plan === 'pro';
+      planBadge.textContent = isPro ? 'Pro' : '無料';
+      planBadge.className = `plan-badge ${isPro ? 'plan-pro' : 'plan-free'}`;
+      accountPlanBadge.textContent = isPro ? 'Pro' : '無料';
+      accountPlanBadge.className = `plan-badge ${isPro ? 'plan-pro-card' : 'plan-free-card'}`;
+      upgradeBanner.classList.toggle('hidden', isPro);
+      manageBtn.classList.toggle('hidden', !isPro);
+      periodEndRow.classList.add('hidden');
+      await chrome.storage.local.set({ userPlan: isPro ? 'pro' : 'free', userEmail: resolvedUser.email });
+    }
   }
 }
 

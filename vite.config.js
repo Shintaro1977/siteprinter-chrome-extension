@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => {
         progress: resolve(__dirname, 'src/progress/progress.html'),
         'service-worker': resolve(__dirname, 'src/background/service-worker.js'),
         content: resolve(__dirname, 'src/content/content.js'),
+        confirmed: resolve(__dirname, 'src/confirmed/confirmed.js'),
       },
       output: {
         entryFileNames: (chunkInfo) => {
@@ -26,6 +27,9 @@ export default defineConfig(({ mode }) => {
           }
           if (chunkInfo.name === 'content') {
             return 'content/[name].js';
+          }
+          if (chunkInfo.name === 'confirmed') {
+            return 'confirmed/[name].js';
           }
           return '[name]/[name].js';
         },

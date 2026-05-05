@@ -622,9 +622,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: white;
-  border: 1px solid #cbd5e1;
-  color: #475569;
+  background: #2563eb;
+  border: 1px solid #2563eb;
+  color: #fff;
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
@@ -635,9 +635,9 @@ body {
 }
 
 .btn-refresh:hover {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-  color: #1e293b;
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
 }
 
 .period-end-text {
@@ -658,6 +658,25 @@ body {
   flex: 1;
 }
 
+/* Danger Button */
+.btn-danger {
+  background: #fff;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  font-size: 13px;
+}
+
+.btn-danger:hover {
+  background: #fef2f2;
+  border-color: #dc2626;
+}
+
+.card-action-row--danger {
+  border-top: 1px solid #fee2e2;
+  margin-top: 0;
+  padding-top: 10px;
+}
+
 /* Site Footer */
 .site-footer {
   padding: 20px 32px 28px;
@@ -668,6 +687,12 @@ body {
   font-size: 11px;
   color: #94a3b8;
   text-decoration: none;
+}
+
+.site-footer-sep {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin: 0 6px;
 }
 
 .site-footer-link:hover {
@@ -681,6 +706,7 @@ body {
   border: 1px solid #bfdbfe;
   border-radius: 12px;
   padding: 16px 20px;
+  margin: 4px 0 8px;
 }
 
 .upgrade-banner-content {

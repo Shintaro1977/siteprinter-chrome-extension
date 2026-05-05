@@ -108,20 +108,22 @@
             <span>プラン情報を取得できませんでした。接続を確認してください。</span>
             <button id="retryPlanBtn" class="btn-retry">再試行</button>
           </div>
+          <!-- アップグレードバナー（無料プランのみ表示） -->
+          <div id="upgradeBanner" class="upgrade-banner hidden">
+            <div class="upgrade-banner-content">
+              <div class="upgrade-banner-text">
+                <strong>Proプランにアップグレード</strong>
+                <span>高解像度出力・A3対応・透かしなしなどの機能が利用できます</span>
+              </div>
+              <button id="upgradeBtn" class="btn-upgrade">アップグレード</button>
+            </div>
+          </div>
           <div class="card-action-row">
             <button id="manageBtn" class="btn btn-secondary hidden">サブスクリプションを管理</button>
             <button id="logoutBtn" class="btn btn-secondary">ログアウト</button>
           </div>
-        </div>
-
-        <!-- アップグレードバナー（無料プランのみ表示） -->
-        <div id="upgradeBanner" class="upgrade-banner hidden">
-          <div class="upgrade-banner-content">
-            <div class="upgrade-banner-text">
-              <strong>Proプランにアップグレード</strong>
-              <span>高解像度出力・A3対応・透かしなしなどの機能が利用できます</span>
-            </div>
-            <button id="upgradeBtn" class="btn-upgrade">アップグレード</button>
+          <div class="card-action-row card-action-row--danger">
+            <button id="deleteAccountBtn" class="btn btn-danger">アカウントを削除</button>
           </div>
         </div>
       </div>
@@ -180,6 +182,7 @@
                 <p id="loginError" class="form-error hidden"></p>
                 <button id="resendConfirmBtn" type="button" class="btn btn-secondary hidden">確認メールを再送信</button>
                 <button type="submit" class="btn btn-primary">ログイン</button>
+                <button id="forgotPasswordLink" type="button" class="btn-text-link">パスワードを忘れた場合</button>
               </form>
             </div>
 
@@ -197,6 +200,23 @@
                 <p id="signupError" class="form-error hidden"></p>
                 <button type="submit" class="btn btn-primary">アカウントを作成</button>
               </form>
+            </div>
+
+            <!-- パスワードリセットパネル -->
+            <div id="forgotPane" class="auth-pane hidden">
+              <div class="email-sent-box">
+                <div class="email-sent-icon">🔑</div>
+                <p class="email-sent-title">パスワードをリセット</p>
+                <p class="email-sent-desc">登録済みのメールアドレスを入力してください。パスワードリセット用のリンクを送信します。</p>
+                <div class="form-group" style="text-align:left;width:100%;">
+                  <label for="forgotEmailInput" class="form-label">メールアドレス</label>
+                  <input type="email" id="forgotEmailInput" class="form-input" placeholder="your@email.com" autocomplete="email">
+                </div>
+                <p id="forgotError" class="form-error hidden"></p>
+                <p id="forgotSuccess" class="email-sent-desc hidden">パスワードリセットメールを送信しました。メール内のリンクをクリックしてください。</p>
+                <button id="forgotSubmitBtn" type="button" class="btn btn-primary">リセットメールを送信</button>
+                <button id="backToLoginFromForgotBtn" type="button" class="btn-text-link">ログイン画面に戻る</button>
+              </div>
             </div>
 
             <!-- 確認メール送信済みパネル -->
@@ -219,6 +239,10 @@
     <!-- サイトリンク（最下部、常に表示） -->
     <div class="site-footer">
       <a href="https://extension.siteprinter.jp" target="_blank" class="site-footer-link">extension.siteprinter.jp</a>
+      <span class="site-footer-sep">·</span>
+      <a href="https://extension.siteprinter.jp/terms/" target="_blank" class="site-footer-link">利用規約</a>
+      <span class="site-footer-sep">·</span>
+      <a href="https://extension.siteprinter.jp/privacy/" target="_blank" class="site-footer-link">プライバシーポリシー</a>
     </div>
   </div>
 

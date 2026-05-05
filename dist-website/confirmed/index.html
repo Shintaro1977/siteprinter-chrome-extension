@@ -45,7 +45,7 @@
       background: #f1f5f9;
       border-radius: 10px;
       padding: 16px 20px;
-      margin: 24px 0;
+      margin: 24px 0 16px;
       text-align: left;
     }
     .step-item {
@@ -71,17 +71,45 @@
       flex-shrink: 0;
       margin-top: 1px;
     }
+    .auto-login-status {
+      display: none;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin: 24px 0 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #16a34a;
+    }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+    }
     .btn {
       display: inline-block;
-      margin-top: 8px;
-      padding: 10px 24px;
+      padding: 12px 28px;
       background: #2563eb;
       color: #fff;
       text-decoration: none;
       border-radius: 8px;
       font-size: 14px;
       font-weight: 600;
+      border: none;
+      cursor: pointer;
+      width: 100%;
     }
+    .btn:hover { background: #1d4ed8; }
+    .btn-secondary {
+      background: transparent;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+      font-size: 13px;
+      padding: 10px 28px;
+    }
+    .btn-secondary:hover { background: #f8fafc; color: #334155; }
     .footer-link {
       display: block;
       margin-top: 24px;
@@ -102,33 +130,28 @@
   </style>
 </head>
 <body>
-  <div class="card" id="successCard">
+  <div class="card">
     <div class="icon">✅</div>
     <h1>メール認証が完了しました</h1>
     <p>SitePrinter extension のアカウントが有効になりました。</p>
 
-    <div class="step">
-      <div class="step-item">
-        <div class="step-num">1</div>
-        <span>Chrome または Edge のツールバーにある SitePrinter extension のアイコンをクリック</span>
-      </div>
-      <div class="step-item">
-        <div class="step-num">2</div>
-        <span>設定画面を開き、メールアドレスとパスワードでログイン</span>
-      </div>
-      <div class="step-item">
-        <div class="step-num">3</div>
-        <span>ご利用開始！</span>
-      </div>
+    <!-- 自動ログイン成功時（コンテンツスクリプトが表示） -->
+    <div class="auto-login-status" id="autoLoginStatus">
+      ✓ 拡張機能に自動でログインしました
     </div>
 
-    <a href="/" class="btn">トップページへ</a>
+    <div class="actions">
+      <!-- 拡張機能を開くボタン（コンテンツスクリプトが表示） -->
+      <button id="openExtensionBtn" class="btn" style="display:none;">設定画面を開く</button>
+      <!-- 閉じるボタン（常に表示） -->
+      <button class="btn btn-secondary" onclick="window.close()">このウィンドウを閉じる</button>
+    </div>
+
     <div class="error-box" id="errorBox"></div>
     <a href="/" class="footer-link">extension.siteprinter.jp</a>
   </div>
 
   <script>
-    // URLのハッシュまたはクエリにエラーが含まれる場合に表示
     const params = new URLSearchParams(window.location.hash.slice(1));
     const searchParams = new URLSearchParams(window.location.search);
     const error = params.get('error_description') || searchParams.get('error_description');

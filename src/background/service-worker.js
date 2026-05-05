@@ -43,6 +43,12 @@ class CancelledError extends Error {
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'openOptionsPage') {
+    chrome.runtime.openOptionsPage();
+    sendResponse({ ok: true });
+    return false;
+  }
+
   if (request.action === 'captureScreenshots') {
     // Acknowledge immediately so the popup can safely close before capture completes.
     // Avoids message loss when the service worker was dormant and the popup closes

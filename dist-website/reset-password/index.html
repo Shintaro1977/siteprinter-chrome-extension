@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>パスワードの再設定 — SitePrinter extension</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      background: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+      padding: 48px 40px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+    }
+    .icon { font-size: 48px; margin-bottom: 16px; }
+    h1 {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 8px;
+      letter-spacing: -.02em;
+    }
+    .desc {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+    .form-group { text-align: left; margin-bottom: 16px; }
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #0f172a;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .form-input:focus { border-color: #2563eb; }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    .error-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #dc2626;
+      display: none;
+      text-align: left;
+    }
+    .success-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #16a34a;
+      display: none;
+      margin-bottom: 16px;
+    }
+    .footer-link {
+      display: block;
+      margin-top: 24px;
+      font-size: 12px;
+      color: #94a3b8;
+      text-decoration: none;
+    }
+    .btn-close {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      color: #64748b;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn-close:hover { background: #f8fafc; }
+  </style>
+</head>
+<body>
+  <div class="card" id="resetCard">
+    <div class="icon">🔑</div>
+    <h1>パスワードの再設定</h1>
+    <p class="desc">新しいパスワードを入力してください。</p>
+
+    <div id="successBox" class="success-box">✓ パスワードを変更しました</div>
+
+    <form id="resetForm">
+      <div class="form-group">
+        <label for="newPassword" class="form-label">新しいパスワード</label>
+        <input type="password" id="newPassword" class="form-input" placeholder="6文字以上のパスワード" required minlength="6">
+      </div>
+      <div class="form-group">
+        <label for="confirmPassword" class="form-label">パスワード（確認）</label>
+        <input type="password" id="confirmPassword" class="form-input" placeholder="もう一度入力" required minlength="6">
+      </div>
+      <button type="submit" class="btn" id="submitBtn">パスワードを変更する</button>
+    </form>
+
+    <button class="btn-close" onclick="window.close()" id="closeBtn" style="display:none;">このウィンドウを閉じる</button>
+
+    <div class="error-box" id="errorBox"></div>
+    <a href="/" class="footer-link">extension.siteprinter.jp</a>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://cglzfougwelfxvmnbung.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnbHpmb3Vnd2VsZnh2bW5idW5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NTM4MjIsImV4cCI6MjA5MzEyOTgyMn0.7Cw1oh4t3u1ZvLIdIQ60kXPBK1QtLPXhWbL7lPrPv1Q';
+
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const access_token = params.get('access_token');
+    const type = params.get('type');
+
+    const errorBox = document.getElementById('errorBox');
+    const successBox = document.getElementById('successBox');
+    const resetForm = document.getElementById('resetForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const closeBtn = document.getElementById('closeBtn');
+
+    if (!access_token || type !== 'recovery') {
+      errorBox.textContent = 'リンクが無効または期限切れです。拡張機能の設定画面から再度パスワードリセットを行ってください。';
+      errorBox.style.display = 'block';
+      resetForm.style.display = 'none';
+    }
+
+    resetForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      errorBox.style.display = 'none';
+
+      if (newPassword !== confirmPassword) {
+        errorBox.textContent = 'パスワードが一致しません。';
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '変更中...';
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${access_token}`,
+          },
+          body: JSON.stringify({ password: newPassword }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.message || 'エラーが発生しました');
+        }
+
+        successBox.style.display = 'block';
+        resetForm.style.display = 'none';
+        closeBtn.style.display = 'block';
+      } catch (err) {
+        errorBox.textContent = err.message || 'エラーが発生しました。リンクが期限切れの可能性があります。';
+        errorBox.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'パスワードを変更する';
+      }
+    });
+  </script>
+</body>
+</html>
