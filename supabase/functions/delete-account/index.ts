@@ -31,6 +31,21 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
 
+  // アクティブなサブスクリプションがある場合は削除を拒否
+  const { data: sub } = await supabaseAdmin
+    .from('subscriptions')
+    .select('status')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .maybeSingle();
+
+  if (sub) {
+    return new Response(JSON.stringify({ error: 'Proプランを解約してからアカウントを削除してください' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
+  }
+
   // 関連データを削除
   await supabaseAdmin.from('subscriptions').delete().eq('user_id', user.id);
   await supabaseAdmin.from('user_grants').delete().eq('user_id', user.id);

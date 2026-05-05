@@ -327,8 +327,14 @@ async function init() {
 
   // アカウント削除
   deleteAccountBtn.addEventListener('click', async () => {
+    const { userPlan } = await chrome.storage.local.get({ userPlan: 'free' });
+    if (userPlan === 'pro') {
+      showToast('Proプランを解約してからアカウントを削除してください');
+      return;
+    }
+
     const confirmed = window.confirm(
-      'アカウントを削除しますか？\n\nこの操作は取り消せません。アカウント情報およびサブスクリプション情報がすべて削除されます。'
+      'アカウントを削除しますか？\n\nこの操作は取り消せません。アカウント情報がすべて削除されます。'
     );
     if (!confirmed) return;
 
