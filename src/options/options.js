@@ -12,6 +12,7 @@ const accountEmail = document.getElementById('accountEmail');
 const accountPlanBadge = document.getElementById('accountPlanBadge');
 const upgradeBtn = document.getElementById('upgradeBtn');
 const manageBtn = document.getElementById('manageBtn');
+const guestBadgeRow = document.getElementById('guestBadgeRow');
 const logoutBtn = document.getElementById('logoutBtn');
 const deleteAccountBtn = document.getElementById('deleteAccountBtn');
 const refreshBtn = document.getElementById('refreshBtn');
@@ -426,6 +427,7 @@ async function loadPlanInfo(user) {
       accountPlanBadge.className = 'plan-badge plan-pro-card';
       upgradeBanner.classList.add('hidden');
       manageBtn.classList.add('hidden');
+      guestBadgeRow.classList.remove('hidden');
       periodEndRow.classList.add('hidden');
       await chrome.storage.local.set({ userPlan: 'pro', userEmail: resolvedUser.email });
       return;
@@ -449,6 +451,7 @@ async function loadPlanInfo(user) {
 
     upgradeBanner.classList.toggle('hidden', isPro);
     manageBtn.classList.toggle('hidden', !isPro);
+    guestBadgeRow.classList.add('hidden');
 
     if (isPro && data?.cancel_at_period_end && data?.current_period_end) {
       const endDate = new Date(data.current_period_end);
@@ -469,6 +472,7 @@ async function loadPlanInfo(user) {
       // ネットワーク切断時はエラーを表示
       upgradeBanner.classList.add('hidden');
       manageBtn.classList.add('hidden');
+      guestBadgeRow.classList.add('hidden');
       periodEndRow.classList.add('hidden');
       planBadge.textContent = '-';
       planBadge.className = 'plan-badge plan-free';
@@ -484,6 +488,7 @@ async function loadPlanInfo(user) {
       accountPlanBadge.className = `plan-badge ${isPro ? 'plan-pro-card' : 'plan-free-card'}`;
       upgradeBanner.classList.toggle('hidden', isPro);
       manageBtn.classList.toggle('hidden', !isPro);
+      guestBadgeRow.classList.add('hidden');
       periodEndRow.classList.add('hidden');
       await chrome.storage.local.set({ userPlan: isPro ? 'pro' : 'free', userEmail: resolvedUser.email });
     }
