@@ -498,6 +498,9 @@ function showAuthView() {
   planBadge.textContent = '無料';
   planBadge.className = 'plan-badge plan-free';
   chrome.storage.local.remove(['userPlan', 'userEmail']);
+
+  deleteAccountBtn.disabled = false;
+  deleteAccountBtn.textContent = 'アカウントを削除';
 }
 
 async function loadImageFormatSetting() {
