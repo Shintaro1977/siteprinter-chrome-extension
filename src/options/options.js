@@ -128,6 +128,12 @@ async function init() {
 
   // Googleログイン
   document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+    if (!document.getElementById('agreeTermsGoogle').checked) {
+      loginError.textContent = '利用規約・プライバシーポリシーへの同意が必要です';
+      loginError.classList.remove('hidden');
+      return;
+    }
+    loginError.classList.add('hidden');
     const btn = document.getElementById('googleLoginBtn');
     btn.disabled = true;
     btn.textContent = '認証中...';
@@ -196,6 +202,12 @@ async function init() {
     const btn = signupForm.querySelector('button[type="submit"]');
     const email = document.getElementById('signupEmailInput').value;
     const password = document.getElementById('signupPasswordInput').value;
+
+    if (!document.getElementById('agreeTermsSignup').checked) {
+      signupError.textContent = '利用規約・プライバシーポリシーへの同意が必要です';
+      signupError.classList.remove('hidden');
+      return;
+    }
 
     signupError.classList.add('hidden');
     btn.disabled = true;

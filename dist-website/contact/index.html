@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>お問い合わせ — SitePrinter</title>
+  <meta name="description" content="SitePrinter extensionへのお問い合わせ">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue-600: #2563eb;
+      --blue-700: #1d4ed8;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-400: #94a3b8;
+      --slate-500: #64748b;
+      --slate-700: #334155;
+      --slate-800: #1e293b;
+      --slate-900: #0f172a;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      color: var(--slate-800);
+      background: #fff;
+      line-height: 1.8;
+      -webkit-font-smoothing: antialiased;
+    }
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--slate-200);
+    }
+    .nav-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+    }
+    .nav-logo {
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-logo-img { height: 20px; display: block; }
+    .nav-logo .badge {
+      font-size: 10px;
+      font-weight: 600;
+      background: #dbeafe;
+      color: #1d4ed8;
+      padding: 2px 7px;
+      border-radius: 20px;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 64px 24px 96px;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--slate-900);
+      letter-spacing: -.02em;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 15px;
+      color: var(--slate-500);
+      margin-bottom: 48px;
+    }
+    .contact-card {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 36px 40px;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .contact-card .icon { font-size: 36px; margin-bottom: 16px; }
+    .contact-card h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 8px;
+    }
+    .contact-card p {
+      font-size: 14px;
+      color: var(--slate-500);
+      margin-bottom: 24px;
+      line-height: 1.7;
+    }
+    .btn-mail {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      background: var(--blue-600);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background .15s;
+    }
+    .btn-mail:hover { background: var(--blue-700); }
+    .notice {
+      font-size: 13px;
+      color: var(--slate-400);
+      margin-top: 16px;
+    }
+    h2.faq-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--slate-900);
+      margin-bottom: 24px;
+    }
+    details {
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    summary {
+      padding: 16px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--slate-800);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after {
+      content: '+';
+      font-size: 18px;
+      color: var(--slate-400);
+      font-weight: 400;
+      flex-shrink: 0;
+    }
+    details[open] summary::after { content: '−'; }
+    details[open] summary { color: var(--blue-600); }
+    .faq-body {
+      padding: 0 20px 16px;
+      font-size: 14px;
+      color: var(--slate-700);
+      line-height: 1.8;
+      border-top: 1px solid var(--slate-100);
+    }
+    .faq-body a { color: var(--blue-600); }
+    footer {
+      background: var(--slate-900);
+      color: rgba(255,255,255,.5);
+      padding: 32px 24px;
+      text-align: center;
+      font-size: 13px;
+    }
+    footer a { color: rgba(255,255,255,.5); text-decoration: none; }
+    footer a:hover { color: rgba(255,255,255,.8); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <img src="/assets/logo-DaIquZBq.svg" alt="SitePrinter" class="nav-logo-img">
+      <span class="badge">extension</span>
+    </a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>お問い合わせ</h1>
+  <p class="subtitle">ご不明な点・ご要望・不具合のご報告はメールにてお受けしています。</p>
+
+  <div class="contact-card">
+    <div class="icon">✉️</div>
+    <h2>メールでお問い合わせ</h2>
+    <p>内容を確認のうえ、通常2〜3営業日以内にご返信いたします。<br>お急ぎの場合もできる限り早急に対応いたします。</p>
+    <a href="mailto:support@siteprinter.jp" class="btn-mail">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      support@siteprinter.jp
+    </a>
+    <p class="notice">※ お問い合わせの際は、ご利用の OS・ブラウザのバージョン、および拡張機能のバージョンをあわせてお知らせいただけると、より迅速に対応できます。</p>
+  </div>
+
+  <h2 class="faq-title">よくあるご質問</h2>
+
+  <details>
+    <summary>PDFが正しく生成されない・レイアウトが崩れる</summary>
+    <div class="faq-body">
+      一部のウェブサイト（動的コンテンツ・Canvasを多用するサイト等）では、正常にキャプチャできない場合があります。設定画面で「PNG（高画質）」を試すか、「再読込取得」をONにしてお試しください。それでも解決しない場合はお問い合わせください。
+    </div>
+  </details>
+
+  <details>
+    <summary>Proプランに申し込んだのに反映されない</summary>
+    <div class="faq-body">
+      決済完了後、設定画面の「プラン情報を更新」ボタンを押してください。それでも反映されない場合は、一度ログアウトして再度ログインをお試しください。解決しない場合はお問い合わせください。
+    </div>
+  </details>
+
+  <details>
+    <summary>解約方法を教えてください</summary>
+    <div class="faq-body">
+      拡張機能の設定画面（オプションページ）にある「サブスクリプションを管理」ボタンから、いつでも解約できます。解約後も当月末まではProプランをご利用いただけます。
+    </div>
+  </details>
+
+  <details>
+    <summary>返金してもらえますか？</summary>
+    <div class="faq-body">
+      原則として返金はいたしかねます。ただし、当サービス側の重大な不具合が原因の場合は個別にご相談ください（<a href="mailto:support@siteprinter.jp">support@siteprinter.jp</a>）。
+    </div>
+  </details>
+
+  <details>
+    <summary>アカウントを削除したい</summary>
+    <div class="faq-body">
+      拡張機能の設定画面（オプションページ）にログイン後、「アカウントを削除」ボタンから削除できます。削除するとすべてのデータが消去され、取り消しできません。
+    </div>
+  </details>
+
+</div>
+
+<footer>
+  <a href="/">SitePrinter extension</a> &nbsp;·&nbsp; © 2026 SitePrinter extension
+</footer>
+
+</body>
+</html>
