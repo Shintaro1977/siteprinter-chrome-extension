@@ -24,6 +24,7 @@ class CaptureController {
     this.originalScrollPosition = { x: 0, y: 0 };
     this.scrollableElement = null;
     this.processedElements = new Set();
+    this._stickyObserver = null;
   }
 
   getSiteType() {
@@ -125,6 +126,11 @@ class CaptureController {
       this.fixBackgroundAttachment();
       this.hideScrollbars();
 
+      // キャプチャ前にすべての sticky 要素を relative に変換し、
+      // スクロールによってクラス付与で sticky になる要素も MutationObserver で捕捉する
+      this._convertAllStickyToRelative();
+      this._startStickyObserver();
+
       console.log('[Content] Page initialized for capture');
 
       const scrollElement = this.scrollableElement || document.documentElement;
@@ -217,6 +223,71 @@ class CaptureController {
     `;
     document.head.appendChild(style);
     this.originalStyles.hoverDisable.push(style);
+  }
+
+  // ─── Sticky pre-conversion (init phase) ─────────────────────────────────────
+
+  /**
+   * ドキュメント全体を走査して現時点のすべての sticky 要素を relative に変換する。
+   * init() から呼ばれ、最初のキャプチャ前に適用される。
+   */
+  _convertAllStickyToRelative() {
+    const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_ELEMENT);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (this.processedElements.has(node)) continue;
+      if (node === document.documentElement || node === document.body) continue;
+      if (window.getComputedStyle(node).getPropertyValue('position') === 'sticky') {
+        this._convertStickyToRelative(node);
+      }
+    }
+    console.log(`[Content] Converted ${this.originalStyles.stickyElements.length} sticky→relative`);
+  }
+
+  /**
+   * 単一要素が sticky なら relative に変換するヘルパー。
+   * MutationObserver コールバックから呼ばれる。
+   */
+  _checkAndConvertSticky(el) {
+    if (!el || el.nodeType !== Node.ELEMENT_NODE) return;
+    if (this.processedElements.has(el)) return;
+    if (el === document.documentElement || el === document.body) return;
+    if (window.getComputedStyle(el).getPropertyValue('position') === 'sticky') {
+      this._convertStickyToRelative(el);
+    }
+  }
+
+  /**
+   * class / style 属性の変化を監視し、スクロールによって動的に付与される
+   * position:sticky を捕捉して relative に変換する MutationObserver を起動する。
+   * 変化した要素だけでなく子要素も確認することで、親へのクラス付与で
+   * 子が sticky になるパターン（例: .scrolled .nav { position:sticky }）に対応する。
+   */
+  _startStickyObserver() {
+    this._stickyObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        const el = mutation.target;
+        // 変化した要素自体を確認
+        this._checkAndConvertSticky(el);
+        // 直接の子要素も確認（親へのクラス付与 → 子が sticky になるケース）
+        for (const child of el.children) {
+          this._checkAndConvertSticky(child);
+        }
+      }
+    });
+
+    this._stickyObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'style'],
+      subtree: true,
+    });
+  }
+
+  _stopStickyObserver() {
+    if (this._stickyObserver) {
+      this._stickyObserver.disconnect();
+      this._stickyObserver = null;
+    }
   }
 
   // ─── Element-level helpers ──────────────────────────────────────────────────
@@ -500,6 +571,8 @@ class CaptureController {
           node.style.removeProperty('background-attachment');
         }
       });
+
+      this._stopStickyObserver();
 
       this.originalStyles.animations.forEach((style) => style.remove());
       this.originalStyles.scrollbars.forEach((style) => style.remove());
