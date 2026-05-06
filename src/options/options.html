@@ -248,6 +248,17 @@
       </div>
     </div>
 
+    <div class="review-request">
+      SitePrinter を気に入っていただけましたら、<a id="reviewLink" href="#" target="_blank" class="review-link">レビューを書いていただけると嬉しいです ↗</a>
+    </div>
+    <script>
+      const CHROME_REVIEW_URL = 'https://chromewebstore.google.com/detail/dcmapjdkohckbpddkgedhcjldhbcomij/reviews';
+      const EDGE_REVIEW_URL = ''; // Edge Add-ons 公開後に設定
+      const isEdge = navigator.userAgent.includes('Edg/');
+      const reviewUrl = isEdge && EDGE_REVIEW_URL ? EDGE_REVIEW_URL : CHROME_REVIEW_URL;
+      document.getElementById('reviewLink').href = reviewUrl;
+    </script>
+
     <!-- サイトリンク（最下部、常に表示） -->
     <div class="site-footer">
       <a href="https://extension.siteprinter.jp" target="_blank" class="site-footer-link">extension.siteprinter.jp</a>

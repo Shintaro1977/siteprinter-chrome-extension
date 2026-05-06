@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-KHM5P624');</script>
+  <!-- End Google Tag Manager -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SitePrinter — WebページをそのままPDFに | Chrome・Edge拡張機能</title>
@@ -612,12 +619,20 @@
     @media (max-width: 768px) {
       section { padding: 64px 20px; }
       .nav-links { display: none; }
+      .nav-actions .btn-primary { display: none; }
       .steps::before { display: none; }
       .step { padding-bottom: 40px; }
+      .hero h1 { font-size: clamp(22px, 7vw, 32px); white-space: nowrap; }
+      .hero-sub { font-size: 14px; }
+      .faq-item summary { text-align: left; }
     }
   </style>
 </head>
 <body>
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KHM5P624"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
 
 <!-- ─── NAV ─── -->
 <nav>
@@ -659,24 +674,16 @@
       すべての処理はブラウザ内で完結。
     </p>
     <div class="hero-cta" id="install">
-      <a href="#" class="btn-hero">
+      <a href="#" class="btn-hero" style="opacity:0.5;pointer-events:none;cursor:default;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="7 10 12 15 17 10"></polyline>
           <line x1="12" y1="15" x2="12" y2="3"></line>
         </svg>
-        Chrome に追加（無料）
-      </a>
-      <a href="#" class="btn-hero btn-hero-outline">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        Edge に追加（無料）
+        まもなく公開
       </a>
     </div>
-    <p class="hero-note">Chrome Web Store・Microsoft Edge Add-ons から入手可能</p>
+    <p class="hero-note">Chrome Web Store から入手可能</p>
   </div>
 
   <div class="hero-visual">
@@ -925,21 +932,13 @@
     <h2>今すぐ無料ではじめる</h2>
     <p>インストールは1分。クレジットカード不要。</p>
     <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
-      <a href="#" class="btn-hero" style="display:inline-flex;">
+      <a href="#" class="btn-hero" style="display:inline-flex;opacity:0.5;pointer-events:none;cursor:default;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="7 10 12 15 17 10"></polyline>
           <line x1="12" y1="15" x2="12" y2="3"></line>
         </svg>
-        Chrome に追加する（無料）
-      </a>
-      <a href="#" class="btn-hero btn-hero-outline" style="display:inline-flex;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        Edge に追加する（無料）
+        まもなく公開
       </a>
     </div>
   </div>

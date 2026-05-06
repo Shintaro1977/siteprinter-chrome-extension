@@ -213,6 +213,11 @@ async function handleCaptureScreenshots(tabIds) {
 
   for (const tabId of tabIds) {
     try {
+      const tab = await chrome.tabs.get(tabId);
+      if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://') || tab.url.startsWith('about:')) {
+        console.warn(`[SitePrinter] Skipping non-injectable tab: ${tab.url}`);
+        continue;
+      }
       const screenshot = await captureFullPage(tabId);
       screenshots.push(screenshot);
     } catch (error) {

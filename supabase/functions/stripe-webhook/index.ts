@@ -5,6 +5,35 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
   apiVersion: '2024-04-10',
 });
 
+const ADMIN_EMAIL = Deno.env.get('ADMIN_EMAIL') ?? 'siteprinter.jp@gmail.com';
+
+async function sendEmail(to: string | string[], subject: string, html: string): Promise<void> {
+  const apiKey = Deno.env.get('RESEND_API_KEY');
+  if (!apiKey) {
+    console.warn('RESEND_API_KEY not set, skipping email');
+    return;
+  }
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'SitePrinter <support@siteprinter.jp>',
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('Resend error:', res.status, text);
+  }
+}
+
+const sendAdminEmail = (subject: string, html: string) => sendEmail(ADMIN_EMAIL, subject, html);
+
 Deno.serve(async (req) => {
   const signature = req.headers.get('stripe-signature');
   const body = await req.text();
@@ -91,6 +120,28 @@ Deno.serve(async (req) => {
     }
 
     console.log('Subscription activated for:', email);
+
+    const jst = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+    await Promise.all([
+      sendAdminEmail(
+        '新規Proユーザー登録',
+        `<p>新しいProプランユーザーが登録されました。</p>
+         <ul>
+           <li>メールアドレス: ${email ?? '不明'}</li>
+           <li>登録日時: ${jst}</li>
+         </ul>`,
+      ),
+      email && sendEmail(
+        email,
+        'SitePrinter Pro へようこそ',
+        `<p>${user.email} 様</p>
+         <p>SitePrinter Pro プランへのご登録ありがとうございます。</p>
+         <p>これより全機能をご利用いただけます。</p>
+         <p>ご不明な点がございましたら、このメールにご返信ください。</p>
+         <br>
+         <p>SitePrinter サポートチーム</p>`,
+      ),
+    ]);
   }
 
   // 解約予約（期間終了時に解約）
@@ -121,6 +172,44 @@ Deno.serve(async (req) => {
       return new Response('Server Error', { status: 500 });
     }
 
+    // 解約予約が新たに設定されたときだけメール送信
+    const prevAttrs = (event.data as any).previous_attributes ?? {};
+    const cancelJustScheduled = isCancelScheduled && (
+      ('cancel_at_period_end' in prevAttrs && prevAttrs.cancel_at_period_end === false) ||
+      ('cancel_at' in prevAttrs && prevAttrs.cancel_at === null)
+    );
+
+    if (cancelJustScheduled) {
+      const { data: subData } = await supabase
+        .from('subscriptions')
+        .select('user_id')
+        .eq('stripe_customer_id', customerId)
+        .single();
+
+      if (subData?.user_id) {
+        const { data: userData } = await supabase.auth.admin.getUserById(subData.user_id);
+        const userEmail = userData?.user?.email;
+        if (userEmail && currentPeriodEnd) {
+          const endDateJST = new Date(currentPeriodEnd).toLocaleString('ja-JP', {
+            timeZone: 'Asia/Tokyo',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+          await sendEmail(
+            userEmail,
+            'SitePrinter Pro 解約予約のお知らせ',
+            `<p>${userEmail} 様</p>
+             <p>SitePrinter Pro プランの解約予約を受け付けました。</p>
+             <p><strong>${endDateJST}</strong> までは引き続き全機能をご利用いただけます。</p>
+             <p>解約をキャンセルしたい場合は、設定画面からお手続きください。</p>
+             <br>
+             <p>SitePrinter サポートチーム</p>`,
+          );
+        }
+      }
+    }
+
     console.log('Subscription updated for customer:', customerId, 'isCancelScheduled:', isCancelScheduled, 'cancel_at:', subscription.cancel_at);
   }
 
@@ -146,6 +235,9 @@ Deno.serve(async (req) => {
     }
 
     if (!subFetchError && subData?.user_id) {
+      const { data: userData } = await supabase.auth.admin.getUserById(subData.user_id);
+      const userEmail = userData?.user?.email;
+
       // grantユーザーはapp_metadataを上書きしない
       const { data: grant } = await supabase
         .from('user_grants')
@@ -158,9 +250,61 @@ Deno.serve(async (req) => {
           app_metadata: { plan: 'free' },
         });
       }
+
+      const jst = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+      await Promise.all([
+        sendAdminEmail(
+          'Proユーザー解約',
+          `<p>Proプランユーザーが解約しました。</p>
+           <ul>
+             <li>メールアドレス: ${userEmail ?? '不明'}</li>
+             <li>解約日時: ${jst}</li>
+           </ul>`,
+        ),
+        userEmail && sendEmail(
+          userEmail,
+          'SitePrinter Pro サブスクリプション解約のお知らせ',
+          `<p>${userEmail} 様</p>
+           <p>SitePrinter Pro プランのサブスクリプションが解約されました。</p>
+           <p>ご利用期間中ありがとうございました。</p>
+           <p>今後ともご利用をご検討いただければ幸いです。</p>
+           <br>
+           <p>SitePrinter サポートチーム</p>`,
+        ),
+      ]);
     }
 
     console.log('Subscription canceled for customer:', customerId);
+  }
+
+  // 決済失敗
+  if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object as Stripe.Invoice;
+    const customerEmail = invoice.customer_email;
+    const nextAttempt = invoice.next_payment_attempt
+      ? new Date(invoice.next_payment_attempt * 1000).toLocaleString('ja-JP', {
+          timeZone: 'Asia/Tokyo',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : null;
+
+    if (customerEmail) {
+      await sendEmail(
+        customerEmail,
+        'SitePrinter Pro お支払いに失敗しました',
+        `<p>${customerEmail} 様</p>
+         <p>SitePrinter Pro プランのお支払い処理に失敗しました。</p>
+         <p>クレジットカードの有効期限切れや残高不足が考えられます。</p>
+         ${nextAttempt ? `<p>次回の自動再試行日: <strong>${nextAttempt}</strong></p>` : ''}
+         <p>お支払い情報の更新は Stripe のカスタマーポータルよりお願いします。</p>
+         <p>解決しない場合は support@siteprinter.jp までお問い合わせください。</p>
+         <br>
+         <p>SitePrinter サポートチーム</p>`,
+      );
+      console.log('Payment failed email sent to:', customerEmail);
+    }
   }
 
   return new Response('ok', { status: 200 });

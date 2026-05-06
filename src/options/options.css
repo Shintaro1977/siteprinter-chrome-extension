@@ -703,6 +703,22 @@ body {
 }
 
 /* Site Footer */
+.review-request {
+  text-align: center;
+  font-size: 11px;
+  color: #94a3b8;
+  padding: 0 32px 16px;
+}
+
+.review-link {
+  color: #94a3b8;
+  text-decoration: underline;
+}
+
+.review-link:hover {
+  color: #64748b;
+}
+
 .site-footer {
   padding: 20px 32px 28px;
   text-align: center;
