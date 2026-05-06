@@ -1,4 +1,3 @@
-// DOM Elements
 const planBadge = document.getElementById('planBadge');
 const settingsBtn = document.getElementById('settingsBtn');
 const mainView = document.getElementById('mainView');
@@ -8,22 +7,18 @@ const captureBtn = document.getElementById('captureBtn');
 const loadingOverlay = document.getElementById('loadingOverlay');
 const loadingText = document.getElementById('loadingText');
 
-// State
 let selectedTabs = [];
 let allTabs = [];
 
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
-  // プランバッジを更新
   await updatePlanBadge();
 
-  // 設定ボタン
   settingsBtn.addEventListener('click', () => {
     chrome.tabs.create({ url: chrome.runtime.getURL('src/options/options.html') });
   });
 
-  // Capture mode
   captureModeRadios.forEach((radio) => {
     radio.addEventListener('change', handleCaptureModeChange);
   });
@@ -33,7 +28,6 @@ async function init() {
 }
 
 async function updatePlanBadge() {
-  // ストレージからプラン情報を取得
   const { userPlan } = await chrome.storage.local.get(['userPlan']);
   const isPro = userPlan === 'pro';
 

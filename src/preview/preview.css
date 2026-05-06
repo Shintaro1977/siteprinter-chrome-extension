@@ -173,10 +173,10 @@ body {
 }
 
 .preview-page-header {
-  height: 42px; /* 15mm header height (15 * 2.83px/mm ≈ 42px) */
-  margin-bottom: 7px; /* 2.5mm spacing to content (2.5 * 2.83px/mm ≈ 7px) */
+  height: 28px; /* 10mm header height (10 * 2.83px/mm ≈ 28px) */
+  margin-bottom: 6px; /* 2.25mm spacing to content (2.25 * 2.83px/mm ≈ 6px) */
   border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 8px;
+  padding-bottom: 2px;
   flex-shrink: 0;
 }
 
@@ -184,7 +184,7 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   overflow: hidden;
 }
 

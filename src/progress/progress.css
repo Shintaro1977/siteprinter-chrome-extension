@@ -37,6 +37,21 @@ body {
   max-width: 100%;
 }
 
+/* Status Label */
+#statusLabel {
+  font-size: 11px;
+  color: #3b82f6;
+  font-weight: 500;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#statusLabel.hidden {
+  display: none;
+}
+
 /* Progress Section */
 #capturing {
   margin-bottom: 14px;

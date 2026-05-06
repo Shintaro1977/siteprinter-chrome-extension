@@ -41,7 +41,6 @@ class CancelledError extends Error {
   }
 }
 
-// Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'openOptionsPage') {
     chrome.runtime.openOptionsPage();
@@ -67,11 +66,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// ========================================
-// Style Modification Helper Functions
-// ========================================
-
-// Generate code to hide fixed/sticky elements
 // ========================================
 // Progress Manager
 // ========================================
@@ -162,6 +156,13 @@ class ProgressManager {
       // Window might be closed by user, ignore error
       console.warn('[ProgressManager] Failed to send progress:', error.message);
     });
+  }
+
+  sendStatus(text) {
+    chrome.runtime.sendMessage({
+      type: 'status',
+      text,
+    }).catch(() => {});
   }
 
   sendProcessing() {
@@ -255,15 +256,27 @@ async function handleCaptureScreenshots(tabIds) {
 async function captureFullPage(tabId) {
   const tab = await chrome.tabs.get(tabId);
 
-  // Activate tab
   await chrome.tabs.update(tabId, { active: true });
   await sleep(300);
 
-  // Force reload if option is enabled
   const { forceReload, imageFormat } = await chrome.storage.local.get({ forceReload: false, imageFormat: 'jpeg' });
   const captureFormat = imageFormat === 'png' ? 'png' : 'jpeg';
   const mimeType = captureFormat === 'png' ? 'image/png' : 'image/jpeg';
+
+  const progressManager = new ProgressManager();
+  await progressManager.open();
+  progressManager.sendTitle(tab.title || 'Untitled');
+
+  const cancelListener = (message, sender, sendResponse) => {
+    if (message.type === 'cancel') {
+      console.log('[SitePrinter] Received cancel request');
+      progressManager.cancel();
+    }
+  };
+  chrome.runtime.onMessage.addListener(cancelListener);
+
   if (forceReload) {
+    progressManager.sendStatus('ページを再読み込みしています...');
     await new Promise((resolve) => {
       const listener = (updatedTabId, changeInfo) => {
         if (updatedTabId === tabId && changeInfo.status === 'complete') {
@@ -274,49 +287,30 @@ async function captureFullPage(tabId) {
       chrome.tabs.onUpdated.addListener(listener);
       chrome.tabs.reload(tabId);
     });
+    const reloadedTab = await chrome.tabs.get(tabId);
+    progressManager.sendTitle(reloadedTab.title || tab.title || 'Untitled');
+    progressManager.sendStatus('コンテンツを読み込んでいます...');
     await sleep(500);
   }
 
-  // Initialize progress manager
-  const progressManager = new ProgressManager();
-  await progressManager.open();
-  progressManager.sendTitle(tab.title || 'Untitled');
-
-  // Set up cancel listener
-  const cancelListener = (message, sender, sendResponse) => {
-    if (message.type === 'cancel') {
-      console.log('[SitePrinter] Received cancel request');
-      progressManager.cancel();
-    }
-  };
-  chrome.runtime.onMessage.addListener(cancelListener);
-
-  // Ensure content script is loaded
-  console.log('[SitePrinter] Ensuring content script is loaded...');
   let contentScriptLoaded = false;
   try {
     const results = await chrome.scripting.executeScript({
       target: { tabId },
-      func: () => {
-        return window.__sitePrinterContentScriptLoaded === true;
-      },
+      func: () => window.__sitePrinterContentScriptLoaded === true,
     });
     contentScriptLoaded = results && results[0] && results[0].result === true;
-    console.log('[SitePrinter] Content script loaded status:', contentScriptLoaded);
   } catch (error) {
     console.log('[SitePrinter] Content script check failed:', error.message);
   }
 
-  // If content script is not loaded, inject it
   if (!contentScriptLoaded) {
-    console.log('[SitePrinter] Injecting content script...');
     try {
       await chrome.scripting.executeScript({
         target: { tabId },
         files: ['content/content.js'],
       });
-      console.log('[SitePrinter] Content script injected successfully');
-      await sleep(500); // Wait for content script to initialize
+      await sleep(500);
     } catch (error) {
       await progressManager.close();
       throw new Error(`Failed to inject content script: ${error.message}`);
@@ -325,8 +319,6 @@ async function captureFullPage(tabId) {
     await sleep(200);
   }
 
-  // Connect to content script via Port
-  console.log('[SitePrinter] Connecting to content script...');
   const port = chrome.tabs.connect(tabId, { name: 'capture' });
 
   let portClosed = false;
@@ -338,7 +330,6 @@ async function captureFullPage(tabId) {
   });
 
   try {
-    // Helper to send message and wait for response
     const sendPortMessage = (message) => {
       return new Promise((resolve, reject) => {
         if (portClosed) {
@@ -353,7 +344,6 @@ async function captureFullPage(tabId) {
         };
         port.onMessage.addListener(listener);
 
-        // Timeout after 10 seconds
         const timeout = setTimeout(() => {
           port.onMessage.removeListener(listener);
           const errorMsg = portClosed
@@ -373,8 +363,6 @@ async function captureFullPage(tabId) {
       });
     };
 
-    // Initialize page for capture
-    console.log('[SitePrinter] Initializing page for capture...');
     const initResponse = await sendPortMessage({ type: 'init' });
 
     if (!initResponse.success) {
@@ -387,8 +375,19 @@ async function captureFullPage(tabId) {
 
     console.log(`[SitePrinter] Page dimensions: ${width}x${height}px, viewport: ${clientWidth}x${clientHeight}px`);
 
-    // Limits for screenshot capture
-    const MAX_TOTAL_HEIGHT = 150000; // Maximum total page height (CSS px)
+    // Scroll pre-scan: trigger scroll-based animations before capturing
+    if (forceReload) {
+      progressManager.sendStatus('アニメーションを起動しています...');
+      await sendPortMessage({ type: 'scrollTo', x: 0, y: height });
+      await sleep(1500);
+      progressManager.sendStatus('ページ先頭に戻っています...');
+      await sendPortMessage({ type: 'scrollTo', x: 0, y: 0 });
+      await sleep(500);
+    }
+
+    progressManager.sendStatus('スクリーンショットを取得中...');
+
+    const MAX_TOTAL_HEIGHT = 150000;
     const viewportHeight = clientHeight;
 
     let actualHeight = height;
@@ -397,55 +396,40 @@ async function captureFullPage(tabId) {
       actualHeight = MAX_TOTAL_HEIGHT;
     }
 
-    // Calculate how many sections we need
-    const SECTION_OVERLAP = 100; // Overlap to avoid missing content at boundaries
+    const SECTION_OVERLAP = 100;
     const sections = [];
     const sectionPositions = [];
     let currentY = 0;
 
-    // Generate section positions
     while (currentY < actualHeight) {
       sectionPositions.push(currentY);
       currentY += viewportHeight - SECTION_OVERLAP;
     }
 
-    console.log(`[SitePrinter] Capturing ${sectionPositions.length} sections...`);
-
-    // Capture each section
-    // Note: Chrome limits captureVisibleTab to 2 calls per second
-    const MIN_CAPTURE_INTERVAL = 600; // Minimum 600ms between captures (for 2 calls/sec limit)
+    // Chrome limits captureVisibleTab to 2 calls per second
+    const MIN_CAPTURE_INTERVAL = 600;
 
     for (let i = 0; i < sectionPositions.length; i++) {
-      // Check if cancelled
       if (progressManager.isCancelled()) {
-        console.log('[SitePrinter] Capture cancelled, stopping...');
         throw new CancelledError();
       }
 
       const captureStartTime = Date.now();
       const scrollY = sectionPositions[i];
 
-      // Scroll to position
-      const scrollResponse = await sendPortMessage({
-        type: 'scrollTo',
-        x: 0,
-        y: scrollY,
-      });
+      const scrollResponse = await sendPortMessage({ type: 'scrollTo', x: 0, y: scrollY });
 
       if (!scrollResponse.success) {
         console.warn(`[SitePrinter] Failed to scroll to ${scrollY}: ${scrollResponse.error}`);
       }
 
-      // Wait for content to settle
       await sleep(200);
 
-      // Capture visible tab
       const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, {
         format: captureFormat,
         ...(captureFormat === 'jpeg' ? { quality: 92 } : {}),
       });
 
-      // Get actual image dimensions
       const base64Data = dataUrl.split(',')[1];
       const blob = await fetch(dataUrl).then(r => r.blob());
       const bitmap = await createImageBitmap(blob);
@@ -453,9 +437,7 @@ async function captureFullPage(tabId) {
       const actualImageWidth = bitmap.width;
       bitmap.close();
 
-      // Use the ACTUAL scroll position from the content script response.
-      // The browser clamps scroll past the max (scrollHeight - clientHeight),
-      // so the actual Y may be less than the requested scrollY.
+      // ブラウザはページ末尾でスクロールをクランプするため、実際のY位置を使用する
       const actualScrollY = scrollResponse.y ?? scrollY;
 
       sections.push({
@@ -465,45 +447,33 @@ async function captureFullPage(tabId) {
         width: actualImageWidth,
       });
 
-      console.log(`[SitePrinter] Section ${i + 1} actual size: ${actualImageWidth}x${actualImageHeight}px`);
-      console.log(`[SitePrinter] Captured section ${i + 1}/${sectionPositions.length} at scroll position ${actualScrollY}px (requested: ${scrollY}px)`);
+      console.log(`[SitePrinter] Captured section ${i + 1}/${sectionPositions.length} at y=${actualScrollY}px`);
 
-      // After the first section, hide fixed/sticky elements so they don't
-      // appear in every subsequent section (would cause header duplication).
+      // 1枚目のキャプチャ後にfixed/sticky要素を非表示にする（2枚目以降の重複防止）
       if (i === 0 && sectionPositions.length > 1) {
-        console.log('[SitePrinter] Hiding fixed/sticky elements for remaining sections...');
         await sendPortMessage({ type: 'hideFixed' });
       }
 
-      // Update progress
       progressManager.sendProgress(i + 1, sectionPositions.length);
 
-      // Ensure we don't exceed Chrome's rate limit (2 captures per second)
       const elapsed = Date.now() - captureStartTime;
       const remainingDelay = MIN_CAPTURE_INTERVAL - elapsed;
       if (remainingDelay > 0 && i < sectionPositions.length - 1) {
-        console.log(`[SitePrinter] Waiting ${remainingDelay}ms to respect rate limit...`);
         await sleep(remainingDelay);
       }
     }
 
-    // Compute device pixel ratio from actual captured image vs CSS client dimensions.
-    // captureVisibleTab returns physical pixels, but clientWidth is CSS (logical) pixels.
+    // captureVisibleTab は物理ピクセルを返すため、CSS論理ピクセルとの比率を計算する
     const dpr = (sections.length > 0 && clientWidth > 0 && sections[0].width > 0) ? sections[0].width / clientWidth : 1;
-    console.log(`[SitePrinter] Detected device pixel ratio: ${dpr}`);
 
-    // Show processing state
+    progressManager.sendStatus('PDF用データを処理中...');
     progressManager.sendProcessing();
 
-    // Stitch sections together
-    console.log(`[SitePrinter] Stitching ${sections.length} sections...`);
     let finalDataUrl;
 
     if (sections.length === 1) {
-      // Single section, no stitching needed
       finalDataUrl = `data:${mimeType};base64,${sections[0].data}`;
     } else {
-      // Stitch multiple sections using physical pixel dimensions
       try {
         const physicalWidth = sections[0].width;
         const physicalTotalHeight = Math.round(actualHeight * dpr);
@@ -517,7 +487,6 @@ async function captureFullPage(tabId) {
       }
     }
 
-    // Cleanup
     await sendPortMessage({ type: 'cleanup' });
 
     return {
@@ -533,19 +502,14 @@ async function captureFullPage(tabId) {
     console.error('[SitePrinter] Capture error:', error);
     throw error;
   } finally {
-    // Remove cancel listener
     chrome.runtime.onMessage.removeListener(cancelListener);
-
-    // Close progress window
     await progressManager.close();
-
-    // Close port
     try {
       if (!portClosed) {
         port.disconnect();
       }
     } catch (e) {
-      // Ignore disconnect errors
+      // ignore
     }
   }
 }
@@ -554,11 +518,10 @@ async function captureFullPage(tabId) {
 // sections[i].offsetY must be the ACTUAL scroll position (CSS px) reported by the browser,
 // not the requested position, so that scroll-clamping at the page bottom is handled correctly.
 async function stitchSections(sections, width, totalHeight, dpr, mimeType = 'image/jpeg') {
-  const physicalViewportHeight = sections[0].height; // physical px height of one viewport capture
+  const physicalViewportHeight = sections[0].height;
 
-  // Compute the physical overlap for section i based on actual scroll positions.
-  // When the browser clamps scroll (e.g. last section), the overlap is larger than expected
-  // and must be calculated from the actual distance between consecutive scroll positions.
+  // ブラウザがスクロールをクランプする（末尾セクション等）場合、重複量が想定より大きくなる。
+  // 実際のスクロール位置の差分から算出することで正確に対応する。
   function getActualOverlap(i) {
     if (i === 0) return 0;
     const prevEndCSS = sections[i - 1].offsetY + physicalViewportHeight / dpr;
@@ -567,7 +530,6 @@ async function stitchSections(sections, width, totalHeight, dpr, mimeType = 'ima
     return Number.isFinite(overlap) ? Math.max(0, overlap) : 0;
   }
 
-  // Calculate stitched height using per-section actual overlaps
   let stitchedHeight = 0;
   for (let i = 0; i < sections.length; i++) {
     stitchedHeight += Math.max(0, sections[i].height - getActualOverlap(i));
@@ -629,7 +591,6 @@ async function stitchSections(sections, width, totalHeight, dpr, mimeType = 'ima
   console.log(`[SitePrinter] Final stitched: ${canvasW}x${canvasH}px (scale=${scale.toFixed(2)})`);
 
 
-  // Convert canvas to blob and then to base64
   const blob = await canvas.convertToBlob({
     type: mimeType,
     ...(mimeType === 'image/jpeg' ? { quality: 0.92 } : {}),
@@ -637,7 +598,6 @@ async function stitchSections(sections, width, totalHeight, dpr, mimeType = 'ima
   const arrayBuffer = await blob.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
 
-  // Convert to base64
   let binary = '';
   const chunkSize = 8192;
   for (let i = 0; i < bytes.length; i += chunkSize) {
@@ -653,7 +613,4 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Handle extension icon click (optional: direct capture)
-chrome.action.onClicked.addListener(async (tab) => {
-  // The popup handles this, but this is a fallback
-});
+chrome.action.onClicked.addListener(async (tab) => {});

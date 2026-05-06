@@ -1,9 +1,11 @@
-// Content Script for SitePrinter Chrome Extension
-// This script runs in the context of web pages
-
-// Mark that content script is loaded
 window.__sitePrinterContentScriptLoaded = true;
 console.log('[Content] SitePrinter content script loaded');
+
+const SITE_CONFIGS = {
+  gmail: {
+    hideSelectors: ['[id=":ro"]', '[id=":5"]', 'td.Bu.y3'],
+  },
+};
 
 /**
  * CaptureController - Manages page state during screenshot capture
@@ -13,6 +15,7 @@ class CaptureController {
     this.originalStyles = {
       fixedElements: [],
       stickyElements: [],
+      absoluteFixed: [],
       backgroundFixed: [],
       animations: [],
       scrollbars: [],
@@ -20,6 +23,14 @@ class CaptureController {
     };
     this.originalScrollPosition = { x: 0, y: 0 };
     this.scrollableElement = null;
+    this.processedElements = new Set();
+  }
+
+  getSiteType() {
+    const url = window.location.href;
+    if (/mail\.google\.com/i.test(url)) return 'gmail';
+    if (/\.(facebook|fb)\.com/i.test(url)) return 'facebook';
+    return 'default';
   }
 
   /**
@@ -52,14 +63,12 @@ class CaptureController {
               node.clientHeight <= window.innerHeight + 20 &&
               (node.scrollWidth > document.documentElement.scrollWidth * 0.7 ||
                node.scrollHeight > document.documentElement.scrollHeight * 0.5)) {
-            // Calculate scroll area
             const scrollArea = node.scrollWidth * node.scrollHeight;
             candidates.push({ node, scrollArea });
           }
         }
       }
 
-      // Select the element with the largest scroll area (main content)
       if (candidates.length > 0) {
         candidates.sort((a, b) => b.scrollArea - a.scrollArea);
         console.log('[Content] Found scrollable element:', candidates[0].node);
@@ -67,7 +76,6 @@ class CaptureController {
       }
     }
 
-    // Facebook detection
     if (/\.(facebook|fb)\.com/i.test(url)) {
       const walker = document.createTreeWalker(
         document.documentElement,
@@ -96,51 +104,29 @@ class CaptureController {
     return null;
   }
 
-  /**
-   * Initialize page for capture - disable animations, hide fixed elements, etc.
-   */
   init() {
     try {
-      // Find scrollable element for SPA sites
       this.scrollableElement = this.findScrollableElement();
 
-      // Save original scroll position
       this.originalScrollPosition = {
         x: window.scrollX,
         y: window.scrollY,
       };
 
-      // If scrollable element found, save its scroll position too
       if (this.scrollableElement) {
         this.originalScrollPosition.elementX = this.scrollableElement.scrollLeft;
         this.originalScrollPosition.elementY = this.scrollableElement.scrollTop;
         console.log('[Content] Using scrollable element for capture');
       }
 
-      // Disable animations
       this.disableAnimations();
-
-      // Disable smooth scroll to prevent scroll-behavior: smooth from causing
-      // the viewport to lag behind during sequential scroll-and-capture
       this.disableScrollBehavior();
-
-      // Disable hover effects so mouse-over styling doesn't appear in screenshots
       this.disableHoverEffects();
-
-      // Note: fixed/sticky elements are intentionally NOT hidden here.
-      // They stay visible for the first capture (page top) so the header appears.
-      // The service worker sends 'hideFixed' after the first capture to hide them
-      // for subsequent sections, preventing duplication on scroll.
-
-      // Handle background-attachment: fixed
       this.fixBackgroundAttachment();
-
-      // Hide scrollbars
       this.hideScrollbars();
 
       console.log('[Content] Page initialized for capture');
 
-      // Return dimensions based on scrollable element or document
       const scrollElement = this.scrollableElement || document.documentElement;
       return {
         success: true,
@@ -155,9 +141,6 @@ class CaptureController {
     }
   }
 
-  /**
-   * Disable all animations and transitions
-   */
   disableAnimations() {
     const style = document.createElement('style');
     style.id = 'siteprinter-animation-disable';
@@ -181,58 +164,6 @@ class CaptureController {
     this.originalStyles.animations.push(style);
   }
 
-  /**
-   * Hide fixed and sticky positioned elements
-   */
-  hideFixedElements() {
-    const OFFSCREEN_VALUE = '-3e+07px';
-    const walker = document.createTreeWalker(
-      document.documentElement,
-      NodeFilter.SHOW_ELEMENT
-    );
-
-    let node;
-    while ((node = walker.nextNode())) {
-      const style = window.getComputedStyle(node);
-      const position = style.getPropertyValue('position');
-
-      if (position === 'fixed') {
-        // Hide fixed elements with opacity
-        const origOpacity = node.style.opacity || '';
-        const origVisibility = node.style.visibility || '';
-
-        node.setAttribute('data-siteprinter-orig-opacity', origOpacity);
-        node.setAttribute('data-siteprinter-orig-visibility', origVisibility);
-        node.style.setProperty('opacity', '0', 'important');
-        node.style.setProperty('visibility', 'hidden', 'important');
-
-        this.originalStyles.fixedElements.push({ node, origOpacity, origVisibility });
-      }
-
-      if (position === 'sticky') {
-        // Move sticky elements far offscreen
-        const origStyles = {};
-        ['top', 'bottom', 'left', 'right'].forEach((prop) => {
-          const value = style.getPropertyValue(prop);
-          if (value && value !== 'auto' && value !== OFFSCREEN_VALUE) {
-            origStyles[prop] = node.style[prop] || '';
-            node.setAttribute(`data-siteprinter-orig-${prop}`, origStyles[prop]);
-            node.style.setProperty(prop, OFFSCREEN_VALUE, 'important');
-          }
-        });
-
-        if (Object.keys(origStyles).length > 0) {
-          this.originalStyles.stickyElements.push({ node, origStyles });
-        }
-      }
-    }
-
-    console.log(`[Content] Hidden ${this.originalStyles.fixedElements.length} fixed elements, ${this.originalStyles.stickyElements.length} sticky elements`);
-  }
-
-  /**
-   * Convert background-attachment: fixed to scroll
-   */
   fixBackgroundAttachment() {
     const walker = document.createTreeWalker(
       document.documentElement,
@@ -253,9 +184,6 @@ class CaptureController {
     console.log(`[Content] Fixed ${this.originalStyles.backgroundFixed.length} background-attachment elements`);
   }
 
-  /**
-   * Hide scrollbars on all elements
-   */
   hideScrollbars() {
     const style = document.createElement('style');
     style.id = 'siteprinter-scrollbar-hide';
@@ -291,20 +219,186 @@ class CaptureController {
     this.originalStyles.hoverDisable.push(style);
   }
 
+  // ─── Element-level helpers ──────────────────────────────────────────────────
+
+  _hideElement(el) {
+    if (this.processedElements.has(el)) return;
+    this.processedElements.add(el);
+
+    const origOpacity = el.style.opacity || '';
+    const origVisibility = el.style.visibility || '';
+    el.style.setProperty('opacity', '0', 'important');
+    el.style.setProperty('visibility', 'hidden', 'important');
+    this.originalStyles.fixedElements.push({ node: el, origOpacity, origVisibility });
+  }
+
   /**
-   * Scroll to specified position
+   * position: fixed → absolute に変換し、スクロール量を加算した座標にピン留めする。
+   * これにより要素はドキュメント上の元の位置にのみ表示され、各セクションに重複しない。
    */
+  _convertFixedToAbsolute(el) {
+    if (this.processedElements.has(el)) return;
+    this.processedElements.add(el);
+
+    const rect = el.getBoundingClientRect();
+    const scrollEl = this.scrollableElement;
+    const scrollY = scrollEl ? scrollEl.scrollTop : window.scrollY;
+    const scrollX = scrollEl ? scrollEl.scrollLeft : window.scrollX;
+
+    const origPosition = el.style.position || '';
+    const origTop = el.style.top || '';
+    const origLeft = el.style.left || '';
+
+    el.style.setProperty('position', 'absolute', 'important');
+    el.style.setProperty('top', `${rect.top + scrollY}px`, 'important');
+    el.style.setProperty('left', `${rect.left + scrollX}px`, 'important');
+
+    this.originalStyles.absoluteFixed.push({ node: el, origPosition, origTop, origLeft });
+    console.log('[Content] Fixed→absolute:', el.tagName, String(el.className).slice(0, 40));
+  }
+
+  _convertStickyToRelative(el) {
+    if (this.processedElements.has(el)) return;
+    this.processedElements.add(el);
+
+    const origPosition = el.style.position || '';
+    el.style.setProperty('position', 'relative', 'important');
+    this.originalStyles.stickyElements.push({ node: el, origPosition });
+  }
+
+  // ─── Gmail-specific ─────────────────────────────────────────────────────────
+
+  _applyGmailFixes() {
+    for (const selector of SITE_CONFIGS.gmail.hideSelectors) {
+      try {
+        document.querySelectorAll(selector).forEach((el) => {
+          if (this.processedElements.has(el)) return;
+          this.processedElements.add(el);
+
+          const origDisplay = el.style.display || '';
+          el.style.setProperty('display', 'none', 'important');
+          this.originalStyles.fixedElements.push({ node: el, origDisplay, isGmail: true });
+        });
+      } catch (_e) {
+        // Invalid selector — skip silently
+      }
+    }
+    console.log('[Content] Applied Gmail-specific fixes');
+  }
+
+  // ─── Dynamic detection ───────────────────────────────────────────────────────
+
+  /**
+   * Detect fixed elements by comparing viewport positions before and after a
+   * small test scroll (elements whose top coordinate does not change are fixed).
+   */
+  async _detectFixedByPosition(siteType) {
+    const scrollEl = this.scrollableElement;
+    const currentY = scrollEl ? scrollEl.scrollTop : window.scrollY;
+    const maxY = scrollEl
+      ? scrollEl.scrollHeight - scrollEl.clientHeight
+      : document.documentElement.scrollHeight - window.innerHeight;
+    const testAmount = Math.min(150, Math.max(0, maxY - currentY));
+
+    if (testAmount < 20) return;
+
+    const prePositions = new Map();
+    const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_ELEMENT);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (this.processedElements.has(node)) continue;
+      if (node === document.documentElement || node === document.body) continue;
+      const rect = node.getBoundingClientRect();
+      if (rect.width > 5 && rect.height > 5 &&
+          rect.top < window.innerHeight && rect.bottom > 0) {
+        prePositions.set(node, rect.top);
+      }
+    }
+
+    if (scrollEl) {
+      scrollEl.scrollTop += testAmount;
+    } else {
+      window.scrollBy(0, testAmount);
+    }
+    await new Promise((r) => setTimeout(r, 80));
+
+    const detectedFixed = [];
+    for (const [el, preTop] of prePositions) {
+      if (Math.abs(el.getBoundingClientRect().top - preTop) < 5) {
+        detectedFixed.push(el);
+      }
+    }
+
+    // Restore scroll position before applying changes
+    // (positions for fixed→absolute must be computed at the original scroll offset)
+    if (scrollEl) {
+      scrollEl.scrollTop -= testAmount;
+    } else {
+      window.scrollBy(0, -testAmount);
+    }
+    await new Promise((r) => setTimeout(r, 80));
+
+    for (const el of detectedFixed) {
+      if (siteType === 'facebook') {
+        this._convertFixedToAbsolute(el);
+      } else {
+        this._hideElement(el);
+      }
+    }
+  }
+
+  _detectFixedByComputedStyle(siteType) {
+    const walker = document.createTreeWalker(document.documentElement, NodeFilter.SHOW_ELEMENT);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (this.processedElements.has(node)) continue;
+      const position = window.getComputedStyle(node).getPropertyValue('position');
+
+      if (position === 'fixed') {
+        if (siteType === 'facebook') {
+          this._convertFixedToAbsolute(node);
+        } else {
+          this._hideElement(node);
+        }
+      } else if (position === 'sticky') {
+        this._convertStickyToRelative(node);
+      }
+    }
+  }
+
+  // ─── Public hide method ──────────────────────────────────────────────────────
+
+  /**
+   * Detect and hide/reposition fixed and sticky elements.
+   * Uses dynamic position tracking (test scroll) + computed-style fallback.
+   */
+  async hideFixedElements() {
+    const siteType = this.getSiteType();
+
+    if (siteType === 'gmail') {
+      this._applyGmailFixes();
+    }
+
+    await this._detectFixedByPosition(siteType);
+    this._detectFixedByComputedStyle(siteType);
+
+    console.log(
+      `[Content] Fixed: ${this.originalStyles.fixedElements.length}, ` +
+      `Sticky→relative: ${this.originalStyles.stickyElements.length}, ` +
+      `Fixed→absolute: ${this.originalStyles.absoluteFixed.length}`
+    );
+  }
+
+  // ─── Scroll ──────────────────────────────────────────────────────────────────
+
   scrollTo(x, y) {
     try {
       const scrollElement = this.scrollableElement;
 
       if (scrollElement) {
-        // Scroll the scrollable element
         scrollElement.scrollTo(x, y);
 
-        // Wait for scroll to complete
         return new Promise((resolve) => {
-          // Check if scroll position matches target
           const checkScroll = () => {
             if (Math.abs(scrollElement.scrollTop - y) < 1 && Math.abs(scrollElement.scrollLeft - x) < 1) {
               resolve({ success: true, x: scrollElement.scrollLeft, y: scrollElement.scrollTop });
@@ -313,21 +407,16 @@ class CaptureController {
             }
           };
 
-          // Start checking after a short delay
           setTimeout(checkScroll, 50);
 
-          // Timeout after 500ms
           setTimeout(() => {
             resolve({ success: true, x: scrollElement.scrollLeft, y: scrollElement.scrollTop });
           }, 500);
         });
       } else {
-        // Default to window scroll
         window.scrollTo(x, y);
 
-        // Wait for scroll to complete
         return new Promise((resolve) => {
-          // Check if scroll position matches target
           const checkScroll = () => {
             if (Math.abs(window.scrollY - y) < 1 && Math.abs(window.scrollX - x) < 1) {
               resolve({ success: true, x: window.scrollX, y: window.scrollY });
@@ -336,10 +425,8 @@ class CaptureController {
             }
           };
 
-          // Start checking after a short delay
           setTimeout(checkScroll, 50);
 
-          // Timeout after 500ms
           setTimeout(() => {
             resolve({ success: true, x: window.scrollX, y: window.scrollY });
           }, 500);
@@ -351,40 +438,60 @@ class CaptureController {
     }
   }
 
+  // ─── Cleanup ─────────────────────────────────────────────────────────────────
+
   /**
    * Restore all modified styles and scroll position
    */
   cleanup() {
     try {
-      // Restore fixed elements
-      this.originalStyles.fixedElements.forEach(({ node, origOpacity, origVisibility }) => {
-        node.removeAttribute('data-siteprinter-orig-opacity');
-        node.removeAttribute('data-siteprinter-orig-visibility');
-        if (origOpacity) {
-          node.style.opacity = origOpacity;
-        } else {
-          node.style.removeProperty('opacity');
-        }
-        if (origVisibility) {
-          node.style.visibility = origVisibility;
-        } else {
-          node.style.removeProperty('visibility');
-        }
-      });
-
-      // Restore sticky elements
-      this.originalStyles.stickyElements.forEach(({ node, origStyles }) => {
-        Object.keys(origStyles).forEach((prop) => {
-          node.removeAttribute(`data-siteprinter-orig-${prop}`);
-          if (origStyles[prop]) {
-            node.style[prop] = origStyles[prop];
+      this.originalStyles.fixedElements.forEach(({ node, origOpacity, origVisibility, origDisplay, isGmail }) => {
+        if (isGmail) {
+          if (origDisplay) {
+            node.style.display = origDisplay;
           } else {
-            node.style.removeProperty(prop);
+            node.style.removeProperty('display');
           }
-        });
+        } else {
+          if (origOpacity) {
+            node.style.opacity = origOpacity;
+          } else {
+            node.style.removeProperty('opacity');
+          }
+          if (origVisibility) {
+            node.style.visibility = origVisibility;
+          } else {
+            node.style.removeProperty('visibility');
+          }
+        }
       });
 
-      // Restore background-attachment
+      this.originalStyles.stickyElements.forEach(({ node, origPosition }) => {
+        if (origPosition) {
+          node.style.position = origPosition;
+        } else {
+          node.style.removeProperty('position');
+        }
+      });
+
+      this.originalStyles.absoluteFixed.forEach(({ node, origPosition, origTop, origLeft }) => {
+        if (origPosition) {
+          node.style.position = origPosition;
+        } else {
+          node.style.removeProperty('position');
+        }
+        if (origTop) {
+          node.style.top = origTop;
+        } else {
+          node.style.removeProperty('top');
+        }
+        if (origLeft) {
+          node.style.left = origLeft;
+        } else {
+          node.style.removeProperty('left');
+        }
+      });
+
       this.originalStyles.backgroundFixed.forEach(({ node, origValue }) => {
         node.removeAttribute('data-siteprinter-orig-bg-attachment');
         if (origValue) {
@@ -394,22 +501,10 @@ class CaptureController {
         }
       });
 
-      // Remove animation disable styles
-      this.originalStyles.animations.forEach((style) => {
-        style.remove();
-      });
+      this.originalStyles.animations.forEach((style) => style.remove());
+      this.originalStyles.scrollbars.forEach((style) => style.remove());
+      this.originalStyles.hoverDisable.forEach((style) => style.remove());
 
-      // Remove scrollbar hide styles
-      this.originalStyles.scrollbars.forEach((style) => {
-        style.remove();
-      });
-
-      // Remove hover disable styles
-      this.originalStyles.hoverDisable.forEach((style) => {
-        style.remove();
-      });
-
-      // Restore scroll position
       if (this.scrollableElement) {
         this.scrollableElement.scrollTo(
           this.originalScrollPosition.elementX || 0,
@@ -418,10 +513,11 @@ class CaptureController {
       }
       window.scrollTo(this.originalScrollPosition.x, this.originalScrollPosition.y);
 
-      // Clear stored styles
+      this.processedElements.clear();
       this.originalStyles = {
         fixedElements: [],
         stickyElements: [],
+        absoluteFixed: [],
         backgroundFixed: [],
         animations: [],
         scrollbars: [],
@@ -437,7 +533,6 @@ class CaptureController {
   }
 }
 
-// Port-based messaging for capture operations
 let captureController = null;
 
 chrome.runtime.onConnect.addListener((port) => {
@@ -459,8 +554,14 @@ chrome.runtime.onConnect.addListener((port) => {
 
       case 'hideFixed':
         if (captureController) {
-          captureController.hideFixedElements();
-          port.postMessage({ type: 'hideFixedComplete', success: true });
+          captureController.hideFixedElements()
+            .then(() => {
+              port.postMessage({ type: 'hideFixedComplete', success: true });
+            })
+            .catch((err) => {
+              console.error('[Content] hideFixed error:', err);
+              port.postMessage({ type: 'hideFixedComplete', success: false, error: err.message });
+            });
         } else {
           port.postMessage({ type: 'hideFixedComplete', success: false, error: 'Not initialized' });
         }

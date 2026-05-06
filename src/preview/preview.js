@@ -1,9 +1,7 @@
 import { jsPDF } from 'jspdf';
 
-// Japanese font state
 let japaneseFontBase64 = null;
 
-// Load Japanese font (Noto Sans JP)
 async function loadJapaneseFont() {
   if (japaneseFontBase64) return japaneseFontBase64;
 
@@ -12,7 +10,6 @@ async function loadJapaneseFont() {
     const response = await fetch(fontUrl);
     const arrayBuffer = await response.arrayBuffer();
 
-    // Convert ArrayBuffer to base64
     const bytes = new Uint8Array(arrayBuffer);
     let binary = '';
     const chunkSize = 8192;
@@ -28,7 +25,6 @@ async function loadJapaneseFont() {
   }
 }
 
-// Register Japanese font with jsPDF instance
 function registerJapaneseFont(pdf, fontBase64) {
   if (!fontBase64) return false;
 
@@ -43,7 +39,6 @@ function registerJapaneseFont(pdf, fontBase64) {
   }
 }
 
-// DOM Elements
 const previewContainer = document.getElementById('previewContainer');
 const pageInfo = document.getElementById('pageInfo');
 const downloadBtn = document.getElementById('downloadBtn');
@@ -58,7 +53,6 @@ const upgradeModal = document.getElementById('upgradeModal');
 const upgradeModalBtn = document.getElementById('upgradeModalBtn');
 const cancelModalBtn = document.getElementById('cancelModalBtn');
 
-// State
 let screenshots = [];
 let capturedAt = '';
 let capturedWithReload = false;
@@ -73,30 +67,26 @@ let settings = {
   imageFormat: 'jpeg', // 'png' | 'jpeg'
 };
 
-// Constants
 const PAPER_SIZES = {
   a4: { width: 210, height: 297 }, // A4: 210mm x 297mm
   a3: { width: 297, height: 420 }, // A3: 297mm x 420mm
 };
 const MM_TO_PX = 2.83; // Approximate conversion for preview
 const PAGE_MARGIN = 7; // Page margin in mm
-const HEADER_HEIGHT = 15; // Header height in mm
+const HEADER_HEIGHT = 10; // Header height in mm
 const FOOTER_HEIGHT = 8; // Footer height in mm
-const CONTENT_SPACING = 2.5; // Spacing between header/footer and content in mm
+const CONTENT_SPACING = 2.25; // Spacing between header/footer and content in mm
 const OVERLAP_SIZES = {
   small: 0.02,   // 2% overlap - 小
   medium: 0.05,  // 5% overlap - 中
   large: 0.08,   // 8% overlap - 大
 };
 
-// Initialize
 document.addEventListener('DOMContentLoaded', init);
 
 async function init() {
-  // Preload Japanese font
   loadJapaneseFont();
 
-  // Load user plan and screenshots from storage
   const data = await chrome.storage.local.get(['screenshots', 'capturedAt', 'capturedWithReload', 'userPlan', 'imageFormat', 'saveLastSettings', 'savedPreviewSettings']);
   screenshots = data.screenshots || [];
   capturedAt = data.capturedAt || new Date().toISOString();
@@ -104,7 +94,6 @@ async function init() {
   userPlan = data.userPlan || 'free';
   settings.imageFormat = data.imageFormat || 'jpeg';
 
-  // Set default settings based on plan
   if (userPlan === 'pro') {
     settings.columns = 2;
     settings.showHeader = true;
@@ -132,19 +121,10 @@ async function init() {
     return;
   }
 
-  // Render screenshot list
   renderScreenshotList();
-
-  // Set up event listeners
   setupEventListeners();
-
-  // Set UI controls to match current settings
   initializeUIControls();
-
-  // Show capture format
   updateCaptureFormat();
-
-  // Initial render
   renderPreview();
 }
 
@@ -159,7 +139,6 @@ function updateCaptureFormat() {
 }
 
 function initializeUIControls() {
-  // Set active state for paper size buttons
   document.querySelectorAll('.paper-size-btn').forEach((btn) => {
     if (btn.dataset.paperSize === settings.paperSize) {
       btn.classList.add('active');
@@ -168,7 +147,6 @@ function initializeUIControls() {
     }
   });
 
-  // Set active state for column buttons
   document.querySelectorAll('.column-btn').forEach((btn) => {
     if (parseInt(btn.dataset.columns, 10) === settings.columns) {
       btn.classList.add('active');
@@ -177,7 +155,6 @@ function initializeUIControls() {
     }
   });
 
-  // Set active state for overlap buttons
   document.querySelectorAll('.overlap-btn').forEach((btn) => {
     if (btn.dataset.overlap === settings.overlap) {
       btn.classList.add('active');
@@ -186,14 +163,12 @@ function initializeUIControls() {
     }
   });
 
-  // Set checkbox states
   showHeaderCheckbox.checked = settings.showHeader;
   showFooterCheckbox.checked = settings.showFooter;
   showBorderCheckbox.checked = settings.showBorder;
 }
 
 function setupEventListeners() {
-  // Paper size buttons
   document.querySelectorAll('.paper-size-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.paper-size-btn').forEach((b) => b.classList.remove('active'));
@@ -204,7 +179,6 @@ function setupEventListeners() {
     });
   });
 
-  // Column buttons
   document.querySelectorAll('.column-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.column-btn').forEach((b) => b.classList.remove('active'));
@@ -215,7 +189,6 @@ function setupEventListeners() {
     });
   });
 
-  // Overlap buttons
   document.querySelectorAll('.overlap-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.overlap-btn').forEach((b) => b.classList.remove('active'));
@@ -226,7 +199,6 @@ function setupEventListeners() {
     });
   });
 
-  // Header/Footer checkboxes
   showHeaderCheckbox.addEventListener('change', () => {
     settings.showHeader = showHeaderCheckbox.checked;
     renderPreview();
@@ -244,10 +216,8 @@ function setupEventListeners() {
     renderPreview();
   });
 
-  // Download button
   downloadBtn.addEventListener('click', handleDownloadClick);
 
-  // Modal buttons
   upgradeModalBtn.addEventListener('click', () => {
     // Open settings page to upgrade
     chrome.tabs.create({ url: chrome.runtime.getURL('src/options/options.html') });
@@ -257,12 +227,10 @@ function setupEventListeners() {
     upgradeModal.classList.add('hidden');
   });
 
-  // Modal backdrop click to close
   upgradeModal.querySelector('.modal-backdrop').addEventListener('click', () => {
     upgradeModal.classList.add('hidden');
   });
 
-  // Initial plan check
   checkPlanRestrictions();
 }
 
@@ -270,9 +238,7 @@ function handleDownloadClick() {
   const isPro = userPlan === 'pro';
   const usingDefaultSettings = isUsingDefaultSettings();
 
-  // Check if user can download
   if (isPro || usingDefaultSettings) {
-    // Save current settings if enabled
     chrome.storage.local.get({ saveLastSettings: true }).then(({ saveLastSettings }) => {
       if (saveLastSettings) {
         chrome.storage.local.set({
@@ -287,10 +253,8 @@ function handleDownloadClick() {
         });
       }
     });
-    // Allowed - generate PDF
     generatePDF();
   } else {
-    // Not allowed - show upgrade modal
     upgradeModal.classList.remove('hidden');
   }
 }
@@ -308,9 +272,7 @@ function checkPlanRestrictions() {
   const isPro = userPlan === 'pro';
   const usingDefaultSettings = isUsingDefaultSettings();
 
-  // Allow download if Pro user OR using default (free) settings
   if (isPro || usingDefaultSettings) {
-    // Show download button
     downloadBtn.innerHTML = `
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -322,13 +284,12 @@ function checkPlanRestrictions() {
     downloadBtn.classList.remove('btn-upgrade');
     downloadBtn.disabled = false;
   } else {
-    // Show upgrade button
     downloadBtn.innerHTML = `
       <span style="font-size: 16px; margin-right: 4px;">✦</span>
       Proプランにアップグレード
     `;
     downloadBtn.classList.add('btn-upgrade');
-    downloadBtn.disabled = false; // Keep button enabled to show modal
+    downloadBtn.disabled = false;
   }
 }
 
@@ -362,11 +323,9 @@ function renderPreview() {
     return;
   }
 
-  // Calculate layout
   const pages = calculateLayout(validScreenshots);
   pageInfo.textContent = `${pages.length} ページ`;
 
-  // Render pages
   previewContainer.innerHTML = pages
     .map(
       (page, pageIndex) => `
@@ -555,14 +514,11 @@ async function generatePDF() {
 
   showLoading('PDFを生成中...');
 
-  // Use setTimeout to allow UI to update
   await new Promise(resolve => setTimeout(resolve, 100));
 
   try {
-    // Ensure Japanese font is loaded
     const fontBase64 = await loadJapaneseFont();
 
-    // Get paper dimensions based on selected size
     const paperSize = PAPER_SIZES[settings.paperSize];
     const paperWidth = paperSize.width;
     const paperHeight = paperSize.height;
@@ -573,14 +529,12 @@ async function generatePDF() {
       format: settings.paperSize,
     });
 
-    // Set PDF metadata
     pdf.setProperties({
       title: validScreenshots[0]?.title || 'SitePrinter',
       author: 'SitePrinter extension',
       creator: 'SitePrinter extension',
     });
 
-    // Register and set Japanese font
     const hasJapaneseFont = registerJapaneseFont(pdf, fontBase64);
 
     const columns = settings.columns;
@@ -598,7 +552,6 @@ async function generatePDF() {
     // 1 row per page
     const cellsPerPage = columns;
 
-    // Pre-calculate total pages
     let totalPages = 0;
     for (const screenshot of validScreenshots) {
       const imgWidth = screenshot.width || 1920;
@@ -612,7 +565,6 @@ async function generatePDF() {
 
     updateLoadingProgress(0, totalPages);
 
-    // Pre-load favicons for all screenshots
     const faviconCache = new Map();
     for (const screenshot of validScreenshots) {
       if (screenshot.favIconUrl && !faviconCache.has(screenshot.favIconUrl)) {
@@ -625,7 +577,6 @@ async function generatePDF() {
     let isFirstPage = true;
 
     for (const screenshot of validScreenshots) {
-      // Load image
       const img = await loadImage(screenshot.dataUrl);
       const faviconDataUrl = faviconCache.get(screenshot.favIconUrl) || null;
 
@@ -678,38 +629,32 @@ async function generatePDF() {
           pdf.setFontSize(6);
           pdf.setTextColor(71, 85, 105);
           const url = screenshot.url ? screenshot.url.substring(0, 90) : '';
-          pdf.text(url, PAGE_MARGIN, y + 10);
+          pdf.text(url, PAGE_MARGIN, y + 8.5);
 
-          // Draw border line below header
-          pdf.setDrawColor(226, 232, 240); // #e2e8f0
+          pdf.setDrawColor(226, 232, 240);
           pdf.setLineWidth(0.1);
-          pdf.line(PAGE_MARGIN, y + HEADER_HEIGHT - 2, paperWidth - PAGE_MARGIN, y + HEADER_HEIGHT - 2);
+          pdf.line(PAGE_MARGIN, y + 10, paperWidth - PAGE_MARGIN, y + 10);
 
-          // Move y position past header and spacing
           y += HEADER_HEIGHT + CONTENT_SPACING;
         }
 
-        // Add cells to page (1 row, multiple columns)
         for (let cellIndex = 0; cellIndex < cellsPerPage && sectionIndex < totalSections; cellIndex++) {
-          // Store current section number BEFORE processing
+          // sectionIndex はループ内で進むため、ラベル表示用に事前に保持する
           const currentSectionNum = sectionIndex + 1;
 
-          const col = cellIndex; // Only 1 row, so cellIndex = column
-
+          const col = cellIndex;
           const cellX = PAGE_MARGIN + col * (cellWidth + cellGap);
-          const cellY = y; // All cells on same row
+          const cellY = y;
 
-          // Calculate source rectangle for this section (with overlap)
           const sourceY = Math.floor(sectionIndex * stepHeightPx);
           const sourceHeight = Math.min(cellContentHeightPx, img.height - sourceY);
 
           if (sourceHeight > 0) {
-            // Reserve space for section label (with spacing)
-            const labelSpacing = 2; // Space above label (mm)
-            const labelHeight = 3; // Space for label itself (mm)
+            const labelSpacing = 2;
+            const labelHeight = 3;
             const availableImageHeight = cellHeight - labelSpacing - labelHeight;
 
-            // Create canvas for this section (cap width to avoid string length errors)
+            // 文字列長エラー回避のため幅を上限 2000px にキャップする
             const MAX_CANVAS_WIDTH = 2000;
             const scale = Math.min(1, MAX_CANVAS_WIDTH / img.width);
             const canvas = document.createElement('canvas');
@@ -726,13 +671,11 @@ async function generatePDF() {
               0, 0, canvas.width, canvas.height
             );
 
-            // Convert to data URL based on selected format
             const imageFormatUpper = settings.imageFormat.toUpperCase();
             const quality = settings.imageFormat === 'jpeg' ? 0.85 : undefined;
             const mimeType = settings.imageFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
             const sectionDataUrl = canvas.toDataURL(mimeType, quality);
 
-            // Calculate actual height to maintain aspect ratio
             const actualCellHeight = (sourceHeight / img.width) * cellWidth;
 
             const imageHeight = Math.min(actualCellHeight, availableImageHeight);
@@ -746,14 +689,12 @@ async function generatePDF() {
               imageHeight
             );
 
-            // Draw border if enabled
             if (settings.showBorder) {
               pdf.setDrawColor(220, 220, 220);
               pdf.setLineWidth(0.2);
               pdf.rect(cellX, cellY, cellWidth, imageHeight);
             }
 
-            // Add section number label below image with spacing
             pdf.setFontSize(5);
             pdf.setTextColor(71, 85, 105);
             const sectionLabel = `[${currentSectionNum}/${totalSections}]`;
@@ -768,15 +709,12 @@ async function generatePDF() {
           }
         }
 
-        // Add footer
         if (settings.showFooter) {
-          // Draw border line above footer
           const footerBorderY = paperHeight - PAGE_MARGIN - FOOTER_HEIGHT - CONTENT_SPACING + 2;
-          pdf.setDrawColor(226, 232, 240); // #e2e8f0
+          pdf.setDrawColor(226, 232, 240);
           pdf.setLineWidth(0.1);
           pdf.line(PAGE_MARGIN, footerBorderY, paperWidth - PAGE_MARGIN, footerBorderY);
 
-          // Footer starts after content + spacing, or at bottom - margin - footer height
           const footerY = paperHeight - PAGE_MARGIN - FOOTER_HEIGHT + 4;
           pdf.setFontSize(6);
           pdf.setTextColor(100, 116, 139);
@@ -794,7 +732,6 @@ async function generatePDF() {
           pdf.text(`取得日時: ${dateStr}${reloadLabel}`, PAGE_MARGIN, footerY);
           pdf.text(`${totalPageNum} / ${totalPages}`, paperWidth / 2, footerY, { align: 'center' });
 
-          // Right side - two lines
           pdf.setFontSize(5);
           pdf.text('実際の画面表示とは異なる場合があります', paperWidth - PAGE_MARGIN, footerY - 1, { align: 'right' });
           pdf.text('Generated by SitePrinter extension', paperWidth - PAGE_MARGIN, footerY + 1.5, { align: 'right' });
@@ -802,7 +739,6 @@ async function generatePDF() {
       }
     }
 
-    // Generate filename: siteprinter_{title}_{YYYYMMDD_HHMMSS}.pdf
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
     const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
@@ -823,7 +759,6 @@ async function generatePDF() {
       ? `siteprinter_${titlePart}_${timestamp}.pdf`
       : `siteprinter_${timestamp}.pdf`;
 
-    // Download PDF
     pdf.save(filename);
 
     hideLoading();

@@ -1,6 +1,5 @@
 import { supabase } from '../lib/supabase.js';
 
-// DOM Elements
 const planBadge = document.getElementById('planBadge');
 const authView = document.getElementById('authView');
 const mainView = document.getElementById('mainView');
@@ -66,7 +65,6 @@ async function init() {
   await loadContextMenuSetting();
   await loadSaveLastSettingsSetting();
 
-  // 画像形式
   document.querySelectorAll('input[name="imageFormat"]').forEach((radio) => {
     radio.addEventListener('change', async () => {
       await chrome.storage.local.set({ imageFormat: radio.value });
@@ -74,21 +72,18 @@ async function init() {
     });
   });
 
-  // 強制リロード
   const forceReloadToggle = document.getElementById('forceReloadToggle');
   forceReloadToggle.addEventListener('change', async () => {
     await chrome.storage.local.set({ forceReload: forceReloadToggle.checked });
     showToast(forceReloadToggle.checked ? '再読込取得をONにしました' : '再読込取得をOFFにしました');
   });
 
-  // 右クリックメニュー
   const contextMenuToggle = document.getElementById('contextMenuToggle');
   contextMenuToggle.addEventListener('change', async () => {
     await chrome.storage.local.set({ contextMenuEnabled: contextMenuToggle.checked });
     showToast(contextMenuToggle.checked ? '右クリックメニューをONにしました' : '右クリックメニューをOFFにしました');
   });
 
-  // 前回の設定を保存する
   const saveLastSettingsToggle = document.getElementById('saveLastSettingsToggle');
   saveLastSettingsToggle.addEventListener('change', async () => {
     await chrome.storage.local.set({ saveLastSettings: saveLastSettingsToggle.checked });
@@ -98,7 +93,6 @@ async function init() {
     showToast(saveLastSettingsToggle.checked ? '設定の保存をONにしました' : '設定の保存をOFFにしました');
   });
 
-  // セッション確認
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
     await showMainView(session.user);
@@ -114,7 +108,6 @@ async function init() {
     }
   });
 
-  // 手動更新ボタン
   refreshBtn.addEventListener('click', () => {
     location.reload();
   });
@@ -127,7 +120,6 @@ async function init() {
     }
   });
 
-  // Googleログイン
   document.getElementById('googleLoginBtn').addEventListener('click', async () => {
     if (!document.getElementById('agreeTermsGoogle').checked) {
       loginError.textContent = '利用規約・プライバシーポリシーへの同意が必要です';
@@ -155,11 +147,9 @@ async function init() {
     }
   });
 
-  // タブ切り替え
   document.getElementById('tabLogin').addEventListener('click', () => switchAuthTab('login'));
   document.getElementById('tabSignup').addEventListener('click', () => switchAuthTab('signup'));
 
-  // ログイン
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = loginForm.querySelector('button[type="submit"]');
@@ -197,7 +187,6 @@ async function init() {
     }
   });
 
-  // サインアップ
   signupForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = signupForm.querySelector('button[type="submit"]');
@@ -236,7 +225,6 @@ async function init() {
     }
   });
 
-  // 確認メール送信済みパネルのボタン
   document.getElementById('resendEmailBtn').addEventListener('click', async () => {
     const email = document.getElementById('emailSentAddress').textContent;
     const btn = document.getElementById('resendEmailBtn');
@@ -255,7 +243,6 @@ async function init() {
     switchAuthTab('login');
   });
 
-  // パスワードリセット
   document.getElementById('forgotPasswordLink').addEventListener('click', () => {
     document.getElementById('loginPane').classList.add('hidden');
     document.getElementById('forgotPane').classList.remove('hidden');
@@ -296,7 +283,6 @@ async function init() {
     switchAuthTab('login');
   });
 
-  // サブスクリプション管理（解約など）
   manageBtn.addEventListener('click', async () => {
     manageBtn.disabled = true;
     manageBtn.textContent = '読み込み中...';
@@ -321,12 +307,10 @@ async function init() {
     }
   });
 
-  // ログアウト
   logoutBtn.addEventListener('click', async () => {
     await supabase.auth.signOut();
   });
 
-  // アカウント削除
   deleteAccountBtn.addEventListener('click', async () => {
     const { userPlan } = await chrome.storage.local.get({ userPlan: 'free' });
     if (userPlan === 'pro') {

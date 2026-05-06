@@ -6,6 +6,7 @@ class ProgressController {
     this.progressPercent = document.getElementById('progressPercent');
     this.processingLabel = document.getElementById('processingLabel');
     this.pageTitle = document.getElementById('pageTitle');
+    this.statusLabel = document.getElementById('statusLabel');
     this.cancelBtn = document.getElementById('cancelBtn');
 
     this.setupMessageListener();
@@ -23,6 +24,10 @@ class ProgressController {
       switch (message.type) {
         case 'title':
           this.updateTitle(message.title);
+          break;
+
+        case 'status':
+          this.updateStatus(message.text);
           break;
 
         case 'progress':
@@ -64,7 +69,12 @@ class ProgressController {
 
   updateTitle(title) {
     this.pageTitle.textContent = title;
-    this.pageTitle.title = title; // tooltip shows full title on hover
+    this.pageTitle.title = title;
+  }
+
+  updateStatus(text) {
+    this.statusLabel.textContent = text;
+    this.statusLabel.classList.remove('hidden');
   }
 
   updateProgress(percent, current, total) {
