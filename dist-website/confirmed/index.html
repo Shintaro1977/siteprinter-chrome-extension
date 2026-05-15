@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>メール認証完了 — SitePrinter extension</title>
+  <title>認証完了 — SitePrinter extension</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
@@ -132,7 +132,7 @@
 <body>
   <div class="card">
     <div class="icon">✅</div>
-    <h1>メール認証が完了しました</h1>
+    <h1 id="pageTitle">認証が完了しました</h1>
     <p>SitePrinter extension のアカウントが有効になりました。</p>
 
     <!-- 自動ログイン成功時（コンテンツスクリプトが表示） -->
@@ -144,7 +144,7 @@
       <!-- 拡張機能を開くボタン（コンテンツスクリプトが表示） -->
       <button id="openExtensionBtn" class="btn" style="display:none;">設定画面を開く</button>
       <!-- 閉じるボタン（常に表示） -->
-      <button class="btn btn-secondary" onclick="window.close()">このウィンドウを閉じる</button>
+      <button class="btn btn-secondary" id="closeBtn">このウィンドウを閉じる</button>
     </div>
 
     <div class="error-box" id="errorBox"></div>
@@ -154,12 +154,27 @@
   <script>
     const params = new URLSearchParams(window.location.hash.slice(1));
     const searchParams = new URLSearchParams(window.location.search);
+
+    // Google OAuthのトークンが含まれている場合はタイトルを変更
+    if (params.get('provider_token') || params.get('access_token')) {
+      const title = document.getElementById('pageTitle');
+      if (title) title.textContent = 'ログインが完了しました';
+    }
+
     const error = params.get('error_description') || searchParams.get('error_description');
     if (error) {
       const box = document.getElementById('errorBox');
       box.textContent = 'リンクが無効または期限切れです。再度サインアップするか、確認メールを再送信してください。';
       box.style.display = 'block';
     }
+
+    document.getElementById('closeBtn').addEventListener('click', function() {
+      window.close();
+      // window.close() が動作しない場合（ブラウザで直接開いたページ）はトップへ
+      setTimeout(function() {
+        window.location.href = '/';
+      }, 300);
+    });
   </script>
 </body>
 </html>
