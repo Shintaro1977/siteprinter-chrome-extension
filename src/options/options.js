@@ -53,6 +53,12 @@ function showEmailSentPane(email) {
 }
 
 async function init() {
+  const CHROME_EXTENSION_ID = 'dcmapjdkohckbpddkgedhcjldhbcomij';
+  if (chrome.runtime.id !== CHROME_EXTENSION_ID) {
+    document.getElementById('reviewLink').href =
+      `https://microsoftedge.microsoft.com/addons/detail/${chrome.runtime.id}`;
+  }
+
   // キャッシュからプランバッジを即時反映（Supabase取得前のちらつき防止）
   const { userPlan } = await chrome.storage.local.get({ userPlan: null });
   if (userPlan) {

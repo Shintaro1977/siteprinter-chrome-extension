@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "SitePrinter extension",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ページ全体のスクリーンショットを取得し、A4/A3サイズのPDFとして出力します",
   "icons": {
     "16": "assets/icons/icon16.png",
