@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "SitePrinter extension"
+  },
+  "extDescription": {
+    "message": "ページ全体のスクリーンショットを取得し、A4/A3サイズのPDFとして出力します"
+  }
+}

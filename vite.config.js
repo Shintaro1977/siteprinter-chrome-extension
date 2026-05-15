@@ -86,6 +86,10 @@ export default defineConfig(({ mode }) => {
           src: 'src/assets/fonts/*',
           dest: 'assets/fonts',
         },
+        {
+          src: '_locales',
+          dest: '.',
+        },
       ],
     }),
   ],

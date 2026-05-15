@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "SitePrinter extension"
+  },
+  "extDescription": {
+    "message": "Capture full-page screenshots and export as A4/A3 PDF files"
+  }
+}
