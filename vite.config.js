@@ -61,6 +61,17 @@ export default defineConfig(({ mode }) => {
     }),
   },
   plugins: [
+    {
+      name: 'strip-remote-urls',
+      renderChunk(code) {
+        // jsPDFのpdfobjectnewwindow機能（未使用）に含まれるCDN URLを除去する。
+        // MV3ではリモートコード参照があるとChromeウェブストアに拒否される。
+        return code.replace(
+          'https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js',
+          ''
+        );
+      },
+    },
     viteStaticCopy({
       targets: [
         {
