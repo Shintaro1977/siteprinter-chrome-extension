@@ -166,12 +166,16 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" id="upgradeModalFooter">
         <button id="upgradeModalBtn" class="btn btn-primary">
           <span style="font-size: 16px; margin-right: 4px;">✦</span>
           <span>Proプランにアップグレード</span>
         </button>
         <button id="cancelModalBtn" class="btn btn-secondary">キャンセル</button>
+      </div>
+      <div id="afterUpgradeMsg" style="display:none; padding: 16px 24px 24px; text-align:center;">
+        <p style="font-size:14px; color:#334155; margin-bottom:16px;">アップグレードが完了したら、この画面を再読み込みするとPDFを作成できます。</p>
+        <button id="reloadBtn" class="btn btn-primary" style="width:100%;">再読み込みしてPDFを作成</button>
       </div>
     </div>
   </div>

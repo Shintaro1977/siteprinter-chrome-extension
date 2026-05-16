@@ -219,8 +219,13 @@ function setupEventListeners() {
   downloadBtn.addEventListener('click', handleDownloadClick);
 
   upgradeModalBtn.addEventListener('click', () => {
-    // Open settings page to upgrade
     chrome.tabs.create({ url: chrome.runtime.getURL('src/options/options.html') });
+    document.getElementById('upgradeModalFooter').style.display = 'none';
+    document.getElementById('afterUpgradeMsg').style.display = 'block';
+  });
+
+  document.getElementById('reloadBtn').addEventListener('click', () => {
+    window.location.reload();
   });
 
   cancelModalBtn.addEventListener('click', () => {
