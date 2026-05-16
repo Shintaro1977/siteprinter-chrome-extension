@@ -59,6 +59,9 @@ async function init() {
       `https://microsoftedge.microsoft.com/addons/detail/${chrome.runtime.id}`;
   }
 
+  const { version } = chrome.runtime.getManifest();
+  document.getElementById('versionLabel').textContent = `v${version}`;
+
   // キャッシュからプランバッジを即時反映（Supabase取得前のちらつき防止）
   const { userPlan } = await chrome.storage.local.get({ userPlan: null });
   if (userPlan) {
