@@ -155,10 +155,13 @@
     const params = new URLSearchParams(window.location.hash.slice(1));
     const searchParams = new URLSearchParams(window.location.search);
 
-    // Google OAuthのトークンが含まれている場合はタイトルを変更
-    if (params.get('provider_token') || params.get('access_token')) {
-      const title = document.getElementById('pageTitle');
-      if (title) title.textContent = 'ログインが完了しました';
+    if (params.get('provider_token')) {
+      // Google OAuth — 実際にログイン済み
+      document.getElementById('pageTitle').textContent = 'ログインが完了しました';
+    } else if (params.get('access_token')) {
+      // メール認証 — 認証完了のみ、ログインは別途必要
+      document.getElementById('pageTitle').textContent = 'メール認証が完了しました';
+      document.querySelector('p').textContent = '拡張機能のオプションからログインしてください。';
     }
 
     const error = params.get('error_description') || searchParams.get('error_description');
