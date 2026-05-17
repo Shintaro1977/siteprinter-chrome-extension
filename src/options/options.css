@@ -702,6 +702,45 @@ body {
   padding-top: 10px;
 }
 
+/* Account change forms */
+.account-change-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 0 4px;
+}
+
+.account-change-item--border {
+  border-top: 1px solid #f1f5f9;
+  margin-top: 8px;
+  padding-top: 20px;
+}
+
+.account-change-item .setting-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin: 0;
+}
+
+.account-change-item .form-input {
+  font-size: 13px;
+}
+
+.account-change-item .btn {
+  align-self: flex-start;
+}
+
+.form-success {
+  font-size: 12px;
+  color: #16a34a;
+  padding: 8px 12px;
+  background: #f0fdf4;
+  border-radius: 6px;
+  border: 1px solid #bbf7d0;
+  line-height: 1.4;
+}
+
 /* Site Footer */
 .review-request {
   text-align: center;

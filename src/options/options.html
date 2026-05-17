@@ -131,6 +131,25 @@
           </div>
         </div>
       </div>
+      <!-- メール/パスワードユーザーのみ表示 -->
+      <div id="emailPasswordSettings" class="settings-section hidden">
+        <h2 class="section-title">アカウント設定</h2>
+        <div class="info-card">
+          <div class="account-change-item">
+            <p class="setting-label">メールアドレスの変更</p>
+            <input type="email" id="newEmailInput" class="form-input" placeholder="新しいメールアドレス" autocomplete="email">
+            <button id="changeEmailBtn" class="btn btn-secondary">確認メールを送信</button>
+            <p id="changeEmailMsg" class="form-error hidden"></p>
+          </div>
+          <div class="account-change-item account-change-item--border">
+            <p class="setting-label">パスワードの変更</p>
+            <input type="password" id="newPasswordInput" class="form-input" placeholder="新しいパスワード（6文字以上）" autocomplete="new-password">
+            <input type="password" id="confirmPasswordInput" class="form-input" placeholder="パスワード（確認）" autocomplete="new-password">
+            <button id="changePasswordBtn" class="btn btn-secondary">パスワードを変更</button>
+            <p id="changePasswordMsg" class="form-error hidden"></p>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- ログイン前（PDF設定の下） -->

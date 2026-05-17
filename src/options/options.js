@@ -383,6 +383,67 @@ async function showMainView(user) {
   await loadPlanInfo(user);
 
   document.getElementById('retryPlanBtn').addEventListener('click', () => loadPlanInfo(user));
+
+  const isGoogleUser = user.app_metadata?.provider === 'google'
+    || user.identities?.some((i) => i.provider === 'google');
+
+  if (!isGoogleUser) {
+    document.getElementById('emailPasswordSettings').classList.remove('hidden');
+    initEmailChange();
+    initPasswordChange();
+  }
+}
+
+function initEmailChange() {
+  document.getElementById('changeEmailBtn').addEventListener('click', async () => {
+    const newEmail = document.getElementById('newEmailInput').value.trim();
+    const msg = document.getElementById('changeEmailMsg');
+    if (!newEmail) return;
+
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    if (error) {
+      msg.textContent = `エラー: ${error.message}`;
+      msg.className = 'form-error';
+    } else {
+      msg.textContent = `${newEmail} に確認メールを送信しました。メール内のリンクをクリックして変更を完了してください。`;
+      msg.className = 'form-success';
+      document.getElementById('newEmailInput').value = '';
+    }
+    msg.classList.remove('hidden');
+  });
+}
+
+function initPasswordChange() {
+  document.getElementById('changePasswordBtn').addEventListener('click', async () => {
+    const newPw = document.getElementById('newPasswordInput').value;
+    const confirmPw = document.getElementById('confirmPasswordInput').value;
+    const msg = document.getElementById('changePasswordMsg');
+
+    if (newPw.length < 6) {
+      msg.textContent = 'パスワードは6文字以上で入力してください。';
+      msg.className = 'form-error';
+      msg.classList.remove('hidden');
+      return;
+    }
+    if (newPw !== confirmPw) {
+      msg.textContent = 'パスワードが一致しません。';
+      msg.className = 'form-error';
+      msg.classList.remove('hidden');
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: newPw });
+    if (error) {
+      msg.textContent = `エラー: ${error.message}`;
+      msg.className = 'form-error';
+    } else {
+      msg.textContent = 'パスワードを変更しました。';
+      msg.className = 'form-success';
+      document.getElementById('newPasswordInput').value = '';
+      document.getElementById('confirmPasswordInput').value = '';
+    }
+    msg.classList.remove('hidden');
+  });
 }
 
 async function loadPlanInfo(user) {
