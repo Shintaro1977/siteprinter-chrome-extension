@@ -20,7 +20,7 @@ async function sendEmail(to: string | string[], subject: string, html: string): 
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'SitePrinter <support@siteprinter.jp>',
+      from: 'SitePrinter extension <support@siteprinter.jp>',
       to: Array.isArray(to) ? to : [to],
       subject,
       html,
@@ -133,13 +133,13 @@ Deno.serve(async (req) => {
       ),
       email && sendEmail(
         email,
-        'SitePrinter Pro へようこそ',
+        'SitePrinter extension Pro へようこそ',
         `<p>${user.email} 様</p>
-         <p>SitePrinter Pro プランへのご登録ありがとうございます。</p>
+         <p>SitePrinter extension Pro プランへのご登録ありがとうございます。</p>
          <p>これより全機能をご利用いただけます。</p>
          <p>ご不明な点がございましたら、このメールにご返信ください。</p>
          <br>
-         <p>SitePrinter サポートチーム</p>`,
+         <p>SitePrinter extension サポートチーム</p>`,
       ),
     ]);
   }
@@ -198,13 +198,13 @@ Deno.serve(async (req) => {
           });
           await sendEmail(
             userEmail,
-            'SitePrinter Pro 解約予約のお知らせ',
+            'SitePrinter extension Pro 解約予約のお知らせ',
             `<p>${userEmail} 様</p>
-             <p>SitePrinter Pro プランの解約予約を受け付けました。</p>
+             <p>SitePrinter extension Pro プランの解約予約を受け付けました。</p>
              <p><strong>${endDateJST}</strong> までは引き続き全機能をご利用いただけます。</p>
              <p>解約をキャンセルしたい場合は、設定画面からお手続きください。</p>
              <br>
-             <p>SitePrinter サポートチーム</p>`,
+             <p>SitePrinter extension サポートチーム</p>`,
           );
         }
       }
@@ -263,13 +263,13 @@ Deno.serve(async (req) => {
         ),
         userEmail && sendEmail(
           userEmail,
-          'SitePrinter Pro サブスクリプション解約のお知らせ',
+          'SitePrinter extension Pro サブスクリプション解約のお知らせ',
           `<p>${userEmail} 様</p>
-           <p>SitePrinter Pro プランのサブスクリプションが解約されました。</p>
+           <p>SitePrinter extension Pro プランのサブスクリプションが解約されました。</p>
            <p>ご利用期間中ありがとうございました。</p>
            <p>今後ともご利用をご検討いただければ幸いです。</p>
            <br>
-           <p>SitePrinter サポートチーム</p>`,
+           <p>SitePrinter extension サポートチーム</p>`,
         ),
       ]);
     }
@@ -293,15 +293,15 @@ Deno.serve(async (req) => {
     if (customerEmail) {
       await sendEmail(
         customerEmail,
-        'SitePrinter Pro お支払いに失敗しました',
+        'SitePrinter extension Pro お支払いに失敗しました',
         `<p>${customerEmail} 様</p>
-         <p>SitePrinter Pro プランのお支払い処理に失敗しました。</p>
+         <p>SitePrinter extension Pro プランのお支払い処理に失敗しました。</p>
          <p>クレジットカードの有効期限切れや残高不足が考えられます。</p>
          ${nextAttempt ? `<p>次回の自動再試行日: <strong>${nextAttempt}</strong></p>` : ''}
          <p>お支払い情報の更新は Stripe のカスタマーポータルよりお願いします。</p>
          <p>解決しない場合は support@siteprinter.jp までお問い合わせください。</p>
          <br>
-         <p>SitePrinter サポートチーム</p>`,
+         <p>SitePrinter extension サポートチーム</p>`,
       );
       console.log('Payment failed email sent to:', customerEmail);
     }

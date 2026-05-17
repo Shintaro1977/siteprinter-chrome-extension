@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'SitePrinter <support@siteprinter.jp>',
+      from: 'SitePrinter extension <support@siteprinter.jp>',
       to: [adminEmail],
       subject: '新規ユーザー登録',
       html: `<p>新しいユーザーが登録されました。</p>
