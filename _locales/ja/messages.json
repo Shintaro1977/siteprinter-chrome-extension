@@ -1,8 +1,8 @@
 {
   "extName": {
-    "message": "SitePrinter extension"
+    "message": "SitePrinter - スクリーンショットをPDF化"
   },
   "extDescription": {
-    "message": "ページ全体のスクリーンショットを取得し、A4/A3サイズのPDFとして出力します"
+    "message": "Webページのスクリーンショットを取得してA4/A3サイズに1列〜4列で自動レイアウトします。省ページ・一覧性の高いPDFを簡単に作成できます。"
   }
 }
