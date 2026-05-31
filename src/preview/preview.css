@@ -172,6 +172,16 @@ body {
   aspect-ratio: 297 / 420; /* A3 ratio */
 }
 
+.preview-page.paper-size-letter {
+  max-width: 612px; /* Letter width at 72 DPI (215.9mm) */
+  aspect-ratio: 215.9 / 279.4; /* Letter ratio */
+}
+
+.preview-page.paper-size-legal {
+  max-width: 612px; /* Legal width at 72 DPI (215.9mm) */
+  aspect-ratio: 215.9 / 355.6; /* Legal ratio */
+}
+
 .preview-page-header {
   height: 28px; /* 10mm header height (10 * 2.83px/mm ≈ 28px) */
   margin-bottom: 6px; /* 2.25mm spacing to content (2.25 * 2.83px/mm ≈ 6px) */

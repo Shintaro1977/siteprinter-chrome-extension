@@ -4,5 +4,8 @@
   },
   "extDescription": {
     "message": "Webページのスクリーンショットを取得してA4/A3サイズに1列〜4列で自動レイアウトします。省ページ・一覧性の高いPDFを簡単に作成できます。"
+  },
+  "contextMenuTitle": {
+    "message": "印刷用PDFを作成"
   }
 }

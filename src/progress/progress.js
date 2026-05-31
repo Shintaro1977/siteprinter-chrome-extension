@@ -1,4 +1,5 @@
 // Progress window controller for SitePrinter Chrome Extension
+import { t } from '../lib/i18n.js';
 
 class ProgressController {
   constructor() {
@@ -58,7 +59,7 @@ class ProgressController {
 
       // Disable button to prevent multiple clicks
       this.cancelBtn.disabled = true;
-      this.cancelBtn.textContent = 'キャンセル中...';
+      this.cancelBtn.textContent = t('cancelling');
 
       // Send cancel message to service worker
       chrome.runtime.sendMessage({ type: 'cancel' }).catch((error) => {
@@ -139,6 +140,8 @@ class ProgressController {
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('warningText').textContent = t('warning_no_switch');
+  document.getElementById('cancelBtn').textContent = t('cancel');
   new ProgressController();
   console.log('[Progress] Progress window initialized');
 

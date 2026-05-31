@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "SitePrinter - Screenshot to PDF"
+  },
+  "extDescription": {
+    "message": "Capture web page screenshots and auto-layout in A4/A3/Letter/Legal with 1–4 columns. Create compact, well-organized PDFs."
+  },
+  "contextMenuTitle": {
+    "message": "Create PDF for Print"
+  }
+}

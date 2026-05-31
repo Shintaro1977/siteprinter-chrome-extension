@@ -1,5 +1,30 @@
 // Service Worker for SitePrinter Chrome Extension
 
+const SW_STRINGS = {
+  ja: {
+    reloading:   'ページを再読み込みしています...',
+    loading:     'コンテンツを読み込んでいます...',
+    animating:   'アニメーションを起動しています...',
+    scrollBack:  'ページ先頭に戻っています...',
+    capturing:   'スクリーンショットを取得中...',
+    processing:  'PDF用データを処理中...',
+  },
+  en: {
+    reloading:   'Reloading page...',
+    loading:     'Loading content...',
+    animating:   'Triggering animations...',
+    scrollBack:  'Scrolling back to top...',
+    capturing:   'Capturing screenshot...',
+    processing:  'Processing data for PDF...',
+  },
+};
+
+async function sw(key) {
+  const langs = await new Promise((resolve) => chrome.i18n.getAcceptLanguages(resolve));
+  const lang = (langs[0] || '').startsWith('ja') ? 'ja' : 'en';
+  return SW_STRINGS[lang][key] || SW_STRINGS.en[key] || key;
+}
+
 const CONTEXT_MENU_ID = 'siteprinter-capture';
 
 async function updateContextMenu() {
@@ -8,7 +33,7 @@ async function updateContextMenu() {
   if (contextMenuEnabled) {
     chrome.contextMenus.create({
       id: CONTEXT_MENU_ID,
-      title: '印刷用PDFを作成',
+      title: chrome.i18n.getMessage('contextMenuTitle'),
       contexts: ['page'],
     });
   }
@@ -35,7 +60,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 // Custom error for cancelled operations
 class CancelledError extends Error {
-  constructor(message = 'キャプチャがキャンセルされました') {
+  constructor(message = 'Capture cancelled') {
     super(message);
     this.name = 'CancelledError';
   }
@@ -281,7 +306,7 @@ async function captureFullPage(tabId) {
   chrome.runtime.onMessage.addListener(cancelListener);
 
   if (forceReload) {
-    progressManager.sendStatus('ページを再読み込みしています...');
+    progressManager.sendStatus(await sw('reloading'));
     await new Promise((resolve) => {
       const listener = (updatedTabId, changeInfo) => {
         if (updatedTabId === tabId && changeInfo.status === 'complete') {
@@ -294,7 +319,7 @@ async function captureFullPage(tabId) {
     });
     const reloadedTab = await chrome.tabs.get(tabId);
     progressManager.sendTitle(reloadedTab.title || tab.title || 'Untitled');
-    progressManager.sendStatus('コンテンツを読み込んでいます...');
+    progressManager.sendStatus(await sw('loading'));
     await sleep(500);
   }
 
@@ -382,15 +407,15 @@ async function captureFullPage(tabId) {
 
     // Scroll pre-scan: trigger scroll-based animations before capturing
     if (forceReload) {
-      progressManager.sendStatus('アニメーションを起動しています...');
+      progressManager.sendStatus(await sw('animating'));
       await sendPortMessage({ type: 'scrollTo', x: 0, y: height });
       await sleep(1500);
-      progressManager.sendStatus('ページ先頭に戻っています...');
+      progressManager.sendStatus(await sw('scrollBack'));
       await sendPortMessage({ type: 'scrollTo', x: 0, y: 0 });
       await sleep(500);
     }
 
-    progressManager.sendStatus('スクリーンショットを取得中...');
+    progressManager.sendStatus(await sw('capturing'));
 
     const MAX_TOTAL_HEIGHT = 150000;
     const viewportHeight = clientHeight;
@@ -471,7 +496,7 @@ async function captureFullPage(tabId) {
     // captureVisibleTab は物理ピクセルを返すため、CSS論理ピクセルとの比率を計算する
     const dpr = (sections.length > 0 && clientWidth > 0 && sections[0].width > 0) ? sections[0].width / clientWidth : 1;
 
-    progressManager.sendStatus('PDF用データを処理中...');
+    progressManager.sendStatus(await sw('processing'));
     progressManager.sendProcessing();
 
     let finalDataUrl;

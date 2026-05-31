@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase.js';
+import { t, applyI18n, isJa } from '../lib/i18n.js';
 
 const planBadge = document.getElementById('planBadge');
 const authView = document.getElementById('authView');
@@ -19,8 +20,9 @@ const toast = document.getElementById('toast');
 const toastMessage = document.getElementById('toastMessage');
 
 document.addEventListener('DOMContentLoaded', init);
+applyI18n();
 
-function showToast(message = '設定を保存しました') {
+function showToast(message = t('toast_saved')) {
   toastMessage.textContent = message;
   toast.classList.remove('hidden', 'hiding');
   setTimeout(() => {
@@ -54,10 +56,19 @@ function showEmailSentPane(email) {
 
 async function init() {
   const CHROME_EXTENSION_ID = 'dcmapjdkohckbpddkgedhcjldhbcomij';
-  if (chrome.runtime.id !== CHROME_EXTENSION_ID) {
-    document.getElementById('reviewLink').href =
-      `https://microsoftedge.microsoft.com/addons/detail/${chrome.runtime.id}`;
-  }
+  const isEdge = chrome.runtime.id !== CHROME_EXTENSION_ID;
+
+  // Review リンクを言語に応じて設定
+  const reviewUrl = isEdge
+    ? `https://microsoftedge.microsoft.com/addons/detail/${chrome.runtime.id}`
+    : 'https://chromewebstore.google.com/detail/dcmapjdkohckbpddkgedhcjldhbcomij/reviews';
+  const reviewText = isJa
+    ? `SitePrinter を気に入っていただけましたら、<a id="reviewLink" href="${reviewUrl}" target="_blank" class="review-link">レビューを書いていただけると嬉しいです ↗</a>`
+    : `Enjoying SitePrinter? <a id="reviewLink" href="${reviewUrl}" target="_blank" class="review-link">Please leave a review ↗</a>`;
+  document.getElementById('reviewRequestText').innerHTML = reviewText;
+
+  // Site footer
+  document.getElementById('siteFooter').innerHTML = t('footer_terms_html');
 
   const { version } = chrome.runtime.getManifest();
   document.getElementById('versionLabel').textContent = `v${version}`;
@@ -65,7 +76,7 @@ async function init() {
   // キャッシュからプランバッジを即時反映（Supabase取得前のちらつき防止）
   const { userPlan } = await chrome.storage.local.get({ userPlan: null });
   if (userPlan) {
-    planBadge.textContent = userPlan === 'pro' ? 'Pro' : '無料';
+    planBadge.textContent = userPlan === 'pro' ? 'Pro' : t('plan_free');
     planBadge.className = `plan-badge ${userPlan === 'pro' ? 'plan-pro' : 'plan-free'}`;
   }
 
@@ -77,20 +88,20 @@ async function init() {
   document.querySelectorAll('input[name="imageFormat"]').forEach((radio) => {
     radio.addEventListener('change', async () => {
       await chrome.storage.local.set({ imageFormat: radio.value });
-      showToast('画像形式を保存しました');
+      showToast(t('toast_image_format'));
     });
   });
 
   const forceReloadToggle = document.getElementById('forceReloadToggle');
   forceReloadToggle.addEventListener('change', async () => {
     await chrome.storage.local.set({ forceReload: forceReloadToggle.checked });
-    showToast(forceReloadToggle.checked ? '再読込取得をONにしました' : '再読込取得をOFFにしました');
+    showToast(t(forceReloadToggle.checked ? 'toast_force_reload_on' : 'toast_force_reload_off'));
   });
 
   const contextMenuToggle = document.getElementById('contextMenuToggle');
   contextMenuToggle.addEventListener('change', async () => {
     await chrome.storage.local.set({ contextMenuEnabled: contextMenuToggle.checked });
-    showToast(contextMenuToggle.checked ? '右クリックメニューをONにしました' : '右クリックメニューをOFFにしました');
+    showToast(t(contextMenuToggle.checked ? 'toast_context_menu_on' : 'toast_context_menu_off'));
   });
 
   const saveLastSettingsToggle = document.getElementById('saveLastSettingsToggle');
@@ -99,7 +110,7 @@ async function init() {
     if (!saveLastSettingsToggle.checked) {
       await chrome.storage.local.remove('savedPreviewSettings');
     }
-    showToast(saveLastSettingsToggle.checked ? '設定の保存をONにしました' : '設定の保存をOFFにしました');
+    showToast(t(saveLastSettingsToggle.checked ? 'toast_save_settings_on' : 'toast_save_settings_off'));
   });
 
   const { data: { session } } = await supabase.auth.getSession();
@@ -131,19 +142,19 @@ async function init() {
 
   document.getElementById('googleLoginBtn').addEventListener('click', async () => {
     if (!document.getElementById('agreeTermsGoogle').checked) {
-      loginError.textContent = '利用規約・プライバシーポリシーへの同意が必要です';
+      loginError.textContent = t('agree_required');
       loginError.classList.remove('hidden');
       return;
     }
     loginError.classList.add('hidden');
     const btn = document.getElementById('googleLoginBtn');
     btn.disabled = true;
-    btn.textContent = '認証中...';
+    btn.textContent = t('authenticating');
     try {
       await signInWithGoogle();
     } catch (err) {
       console.error('Google login failed:', err);
-      loginError.textContent = err.message || 'Googleログインに失敗しました';
+      loginError.textContent = err.message || t('google_login_btn');
       loginError.classList.remove('hidden');
     } finally {
       btn.disabled = false;
@@ -152,7 +163,7 @@ async function init() {
         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
         <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-      </svg>Googleでログイン / 登録`;
+      </svg>${t('google_login_btn')}`;
     }
   });
 
@@ -169,28 +180,28 @@ async function init() {
     loginError.classList.add('hidden');
     resendBtn.classList.add('hidden');
     btn.disabled = true;
-    btn.textContent = 'ログイン中...';
+    btn.textContent = t('logging_in');
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     btn.disabled = false;
-    btn.textContent = 'ログイン';
+    btn.textContent = t('login_btn');
     if (error) {
       if (error.message === 'Email not confirmed') {
-        loginError.textContent = 'メールアドレスの確認が完了していません。受信ボックスをご確認ください。';
+        loginError.textContent = t('email_not_confirmed');
         resendBtn.classList.remove('hidden');
         resendBtn.onclick = async () => {
           resendBtn.disabled = true;
-          resendBtn.textContent = '送信中...';
+          resendBtn.textContent = t('sending');
           await supabase.auth.resend({ type: 'signup', email });
-          resendBtn.textContent = '再送信しました';
+          resendBtn.textContent = t('resent');
           setTimeout(() => {
             resendBtn.disabled = false;
-            resendBtn.textContent = '確認メールを再送信';
+            resendBtn.textContent = t('resend_confirm');
           }, 3000);
         };
       } else {
-        loginError.textContent = 'メールアドレスまたはパスワードが正しくありません';
+        loginError.textContent = t('login_failed');
       }
       loginError.classList.remove('hidden');
     }
@@ -203,31 +214,30 @@ async function init() {
     const password = document.getElementById('signupPasswordInput').value;
 
     if (!document.getElementById('agreeTermsSignup').checked) {
-      signupError.textContent = '利用規約・プライバシーポリシーへの同意が必要です';
+      signupError.textContent = t('agree_required');
       signupError.classList.remove('hidden');
       return;
     }
 
     signupError.classList.add('hidden');
     btn.disabled = true;
-    btn.textContent = '作成中...';
+    btn.textContent = t('creating_account');
 
     const { data, error } = await supabase.auth.signUp({ email, password });
 
     btn.disabled = false;
-    btn.textContent = 'アカウントを作成';
+    btn.textContent = t('create_account_btn');
     if (error) {
       let msg = error.message;
       if (msg === 'Failed to fetch' || (error.status && error.status >= 500)) {
-        msg = 'サーバーエラーが発生しました。しばらくしてから再度お試しください。';
+        msg = t('server_error');
       } else if (msg.includes('Password should be at least') || msg.includes('password')) {
-        msg = 'パスワードは6文字以上で入力してください。';
+        msg = t('pw_min_length');
       }
       signupError.textContent = msg;
       signupError.classList.remove('hidden');
     } else if (!data.user || data.user.identities?.length === 0) {
-      // userがnull または identitiesが空＝既存アカウント（メール確認済み・未確認どちらも）
-      signupError.textContent = 'このメールアドレスはすでに登録されています。ログインしてください。';
+      signupError.textContent = t('email_already_registered');
       signupError.classList.remove('hidden');
     } else {
       showEmailSentPane(email);
@@ -238,12 +248,12 @@ async function init() {
     const email = document.getElementById('emailSentAddress').textContent;
     const btn = document.getElementById('resendEmailBtn');
     btn.disabled = true;
-    btn.textContent = '送信中...';
+    btn.textContent = t('sending');
     await supabase.auth.resend({ type: 'signup', email });
-    btn.textContent = '再送信しました';
+    btn.textContent = t('resent');
     setTimeout(() => {
       btn.disabled = false;
-      btn.textContent = '確認メールを再送信';
+      btn.textContent = t('resend_confirm');
     }, 3000);
   });
 
@@ -260,7 +270,7 @@ async function init() {
     const btn = document.getElementById('forgotSubmitBtn');
     btn.style.display = '';
     btn.disabled = false;
-    btn.textContent = 'リセットメールを送信';
+    btn.textContent = t('send_reset_btn');
   });
 
   document.getElementById('forgotSubmitBtn').addEventListener('click', async () => {
@@ -272,15 +282,15 @@ async function init() {
     errorEl.classList.add('hidden');
     successEl.classList.add('hidden');
     btn.disabled = true;
-    btn.textContent = '送信中...';
+    btn.textContent = t('sending');
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: 'https://extension.siteprinter.jp/reset-password/',
     });
     if (error) {
-      errorEl.textContent = 'エラーが発生しました。しばらくしてから再試行してください。';
+      errorEl.textContent = t('reset_error');
       errorEl.classList.remove('hidden');
       btn.disabled = false;
-      btn.textContent = 'リセットメールを送信';
+      btn.textContent = t('send_reset_btn');
     } else {
       successEl.classList.remove('hidden');
       btn.style.display = 'none';
@@ -294,7 +304,7 @@ async function init() {
 
   manageBtn.addEventListener('click', async () => {
     manageBtn.disabled = true;
-    manageBtn.textContent = '読み込み中...';
+    manageBtn.textContent = t('manage_loading');
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(
@@ -309,10 +319,10 @@ async function init() {
       chrome.tabs.create({ url });
     } catch (err) {
       console.error('Portal session error:', err);
-      showToast('エラーが発生しました: ' + err.message);
+      showToast(t('toast_error') + err.message);
     } finally {
       manageBtn.disabled = false;
-      manageBtn.textContent = 'サブスクリプションを管理';
+      manageBtn.textContent = t('manage_subscription');
     }
   });
 
@@ -323,21 +333,19 @@ async function init() {
   deleteAccountBtn.addEventListener('click', async () => {
     const { userPlan } = await chrome.storage.local.get({ userPlan: 'free' });
     if (userPlan === 'pro') {
-      showToast('Proプランを解約してからアカウントを削除してください');
+      showToast(t('toast_cancel_pro_first'));
       return;
     }
 
-    const confirmed = window.confirm(
-      'アカウントを削除しますか？\n\nこの操作は取り消せません。アカウント情報がすべて削除されます。'
-    );
+    const confirmed = window.confirm(t('confirm_delete_account'));
     if (!confirmed) return;
 
     deleteAccountBtn.disabled = true;
-    deleteAccountBtn.textContent = '削除中...';
+    deleteAccountBtn.textContent = t('deleting');
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('セッションが見つかりません');
+      if (!session) throw new Error(t('session_not_found'));
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const res = await fetch(`${supabaseUrl}/functions/v1/delete-account`, {
@@ -350,16 +358,16 @@ async function init() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || 'アカウントの削除に失敗しました');
+        throw new Error(err.error || t('delete_account_failed'));
       }
 
       await supabase.auth.signOut();
-      showToast('アカウントを削除しました');
+      showToast(t('toast_account_deleted'));
     } catch (err) {
       console.error('[DeleteAccount]', err);
-      showToast('エラー: ' + (err.message || 'アカウントの削除に失敗しました'));
+      showToast(t('error_prefix') + (err.message || t('delete_account_failed')));
       deleteAccountBtn.disabled = false;
-      deleteAccountBtn.textContent = 'アカウントを削除';
+      deleteAccountBtn.textContent = t('delete_account');
     }
   });
 
@@ -402,10 +410,10 @@ function initEmailChange() {
 
     const { error } = await supabase.auth.updateUser({ email: newEmail });
     if (error) {
-      msg.textContent = `エラー: ${error.message}`;
+      msg.textContent = `${t('error_prefix')}${error.message}`;
       msg.className = 'form-error';
     } else {
-      msg.textContent = `${newEmail} に確認メールを送信しました。メール内のリンクをクリックして変更を完了してください。`;
+      msg.textContent = newEmail + t('change_email_confirm_html');
       msg.className = 'form-success';
       document.getElementById('newEmailInput').value = '';
     }
@@ -420,13 +428,13 @@ function initPasswordChange() {
     const msg = document.getElementById('changePasswordMsg');
 
     if (newPw.length < 6) {
-      msg.textContent = 'パスワードは6文字以上で入力してください。';
+      msg.textContent = t('pw_min_length');
       msg.className = 'form-error';
       msg.classList.remove('hidden');
       return;
     }
     if (newPw !== confirmPw) {
-      msg.textContent = 'パスワードが一致しません。';
+      msg.textContent = t('pw_mismatch');
       msg.className = 'form-error';
       msg.classList.remove('hidden');
       return;
@@ -434,10 +442,10 @@ function initPasswordChange() {
 
     const { error } = await supabase.auth.updateUser({ password: newPw });
     if (error) {
-      msg.textContent = `エラー: ${error.message}`;
+      msg.textContent = `${t('error_prefix')}${error.message}`;
       msg.className = 'form-error';
     } else {
-      msg.textContent = 'パスワードを変更しました。';
+      msg.textContent = t('pw_changed');
       msg.className = 'form-success';
       document.getElementById('newPasswordInput').value = '';
       document.getElementById('confirmPasswordInput').value = '';
@@ -498,9 +506,9 @@ async function loadPlanInfo(user) {
     // subscriptionsテーブル または app_metadata のどちらかでProと判定
     const isPro = data?.status === 'active' || resolvedUser.app_metadata?.plan === 'pro';
 
-    planBadge.textContent = isPro ? 'Pro' : '無料';
+    planBadge.textContent = isPro ? 'Pro' : t('plan_free');
     planBadge.className = `plan-badge ${isPro ? 'plan-pro' : 'plan-free'}`;
-    accountPlanBadge.textContent = isPro ? 'Pro' : '無料';
+    accountPlanBadge.textContent = isPro ? 'Pro' : t('plan_free');
     accountPlanBadge.className = `plan-badge ${isPro ? 'plan-pro-card' : 'plan-free-card'}`;
 
     upgradeBanner.classList.toggle('hidden', isPro);
@@ -509,7 +517,8 @@ async function loadPlanInfo(user) {
 
     if (isPro && data?.cancel_at_period_end && data?.current_period_end) {
       const endDate = new Date(data.current_period_end);
-      const formatted = `${endDate.getFullYear()}/${endDate.getMonth() + 1}/${endDate.getDate()} まで利用可能（解約予約済み）`;
+      const dateStr = `${endDate.getFullYear()}/${endDate.getMonth() + 1}/${endDate.getDate()}`;
+      const formatted = t('subscription_active_until').replace('{date}', dateStr);
       periodEndText.textContent = formatted;
       periodEndRow.classList.remove('hidden');
     } else {
@@ -536,9 +545,9 @@ async function loadPlanInfo(user) {
     } else {
       // subscriptionsテーブルのエラー時はapp_metadataにフォールバック（resolvedUserを使用）
       const isPro = resolvedUser.app_metadata?.plan === 'pro';
-      planBadge.textContent = isPro ? 'Pro' : '無料';
+      planBadge.textContent = isPro ? 'Pro' : t('plan_free');
       planBadge.className = `plan-badge ${isPro ? 'plan-pro' : 'plan-free'}`;
-      accountPlanBadge.textContent = isPro ? 'Pro' : '無料';
+      accountPlanBadge.textContent = isPro ? 'Pro' : t('plan_free');
       accountPlanBadge.className = `plan-badge ${isPro ? 'plan-pro-card' : 'plan-free-card'}`;
       upgradeBanner.classList.toggle('hidden', isPro);
       manageBtn.classList.toggle('hidden', !isPro);
@@ -554,12 +563,12 @@ function showAuthView() {
   authView.classList.remove('hidden');
   switchAuthTab('login');
 
-  planBadge.textContent = '無料';
+  planBadge.textContent = t('plan_free');
   planBadge.className = 'plan-badge plan-free';
   chrome.storage.local.remove(['userPlan', 'userEmail']);
 
   deleteAccountBtn.disabled = false;
-  deleteAccountBtn.textContent = 'アカウントを削除';
+  deleteAccountBtn.textContent = t('delete_account');
 }
 
 async function loadImageFormatSetting() {
@@ -598,7 +607,7 @@ async function signInWithGoogle() {
         if (chrome.runtime.lastError) {
           reject(new Error(chrome.runtime.lastError.message));
         } else if (!redirectUrl) {
-          reject(new Error('認証がキャンセルされました'));
+          reject(new Error(t('auth_cancelled')));
         } else {
           resolve(redirectUrl);
         }

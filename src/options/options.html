@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html data-i18n-title="page_title_options">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
-  <!-- Header: コンテナ外、画面幅いっぱい -->
+  <!-- Header -->
   <header class="header">
     <div class="header-content">
       <div class="header-left">
@@ -15,7 +15,7 @@
         <span class="badge">extension</span>
       </div>
       <div class="header-right">
-        <span id="planBadge" class="plan-badge plan-free">無料</span>
+        <span id="planBadge" class="plan-badge plan-free" data-i18n="plan_free">無料</span>
       </div>
     </div>
   </header>
@@ -24,30 +24,31 @@
     <!-- PDF設定（常に表示） -->
     <div class="settings-container">
       <div class="settings-section">
-        <h2 class="section-title">PDF設定</h2>
+        <h2 class="section-title" data-i18n="pdf_settings">PDF設定</h2>
         <div class="info-card">
           <div class="setting-group">
-            <label class="setting-label">画像形式</label>
+            <label class="setting-label" data-i18n="image_format">画像形式</label>
             <div class="radio-group">
               <label class="radio-option">
                 <input type="radio" name="imageFormat" value="jpeg" checked>
                 <div class="radio-content">
-                  <span class="radio-title">JPEG（軽量）</span>
+                  <span class="radio-title" data-i18n="jpeg_label">JPEG（軽量）</span>
                 </div>
               </label>
               <label class="radio-option">
                 <input type="radio" name="imageFormat" value="png">
                 <div class="radio-content">
-                  <span class="radio-title">PNG（高画質）</span>
-                  <span class="radio-note">長いページではエラーになる場合があります</span>
+                  <span class="radio-title" data-i18n="png_label">PNG（高画質）</span>
+                  <span class="radio-note" data-i18n="png_note">長いページではエラーになる場合があります</span>
                 </div>
               </label>
             </div>
           </div>
           <div class="setting-group setting-group--row">
             <div class="setting-group-text">
-              <label class="setting-label" for="forceReloadToggle">再読込取得</label>
-              <p class="setting-description">スクリーンショット取得前にページを再読み込みします。<br>一時的な表示変更を排除し、取得時点のページ状態をより正確に反映します。<br>ONにするとフッターに「再読込取得」と表示されます。</p>
+              <label class="setting-label" for="forceReloadToggle" data-i18n="force_reload_label">再読込取得</label>
+              <p class="setting-description" data-i18n="force_reload_desc">スクリーンショット取得前にページを再読み込みします。<br>一時的な表示変更を排除し、取得時点のページ状態をより正確に反映します。</p>
+              <p class="setting-description" data-i18n="force_reload_note">ONにするとフッターに「再読込取得」と表示されます。</p>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="forceReloadToggle">
@@ -56,8 +57,8 @@
           </div>
           <div class="setting-group setting-group--row">
             <div class="setting-group-text">
-              <label class="setting-label" for="contextMenuToggle">右クリックメニューに追加</label>
-              <p class="setting-description">ページ上で右クリックしたときに「印刷用PDFを作成」を表示します。</p>
+              <label class="setting-label" for="contextMenuToggle" data-i18n="context_menu_label">右クリックメニューに追加</label>
+              <p class="setting-description" data-i18n="context_menu_desc">ページ上で右クリックしたときに「印刷用PDFを作成」を表示します。</p>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="contextMenuToggle" checked>
@@ -66,8 +67,8 @@
           </div>
           <div class="setting-group setting-group--row">
             <div class="setting-group-text">
-              <label class="setting-label" for="saveLastSettingsToggle">前回の設定を保存する</label>
-              <p class="setting-description">PDFダウンロード時の設定（用紙サイズ・列数・重複エリアなど）を保存し、次回に引き継ぎます。</p>
+              <label class="setting-label" for="saveLastSettingsToggle" data-i18n="save_settings_label">前回の設定を保存する</label>
+              <p class="setting-description" data-i18n="save_settings_desc">PDFダウンロード時の設定（用紙サイズ・列数・重複エリアなど）を保存し、次回に引き継ぎます。</p>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="saveLastSettingsToggle" checked>
@@ -82,80 +83,80 @@
     <main id="mainView" class="main hidden">
       <div class="settings-section">
         <div class="section-title-row">
-          <h2 class="section-title">アカウント情報</h2>
+          <h2 class="section-title" data-i18n="account_info">アカウント情報</h2>
           <button id="refreshBtn" class="btn-refresh">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 4 23 10 17 10"></polyline>
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
             </svg>
-            プラン情報を更新
+            <span data-i18n="refresh_plan">プラン情報を更新</span>
           </button>
         </div>
         <div class="info-card">
           <div class="info-row">
-            <span class="info-label">メールアドレス</span>
+            <span class="info-label" data-i18n="email_label">メールアドレス</span>
             <span id="accountEmail" class="info-value">-</span>
           </div>
           <div class="info-row">
-            <span class="info-label">プラン</span>
-            <span id="accountPlanBadge" class="plan-badge plan-free-card">無料</span>
+            <span class="info-label" data-i18n="plan_label">プラン</span>
+            <span id="accountPlanBadge" class="plan-badge plan-free-card" data-i18n="plan_free">無料</span>
           </div>
           <div id="periodEndRow" class="info-row hidden">
-            <span class="info-label">利用期限</span>
+            <span class="info-label" data-i18n="period_end_label">利用期限</span>
             <span id="periodEndText" class="info-value period-end-text">-</span>
           </div>
           <div id="planFetchError" class="plan-fetch-error hidden">
-            <span>プラン情報を取得できませんでした。接続を確認してください。</span>
-            <button id="retryPlanBtn" class="btn-retry">再試行</button>
+            <span data-i18n="plan_fetch_error">プラン情報を取得できませんでした。接続を確認してください。</span>
+            <button id="retryPlanBtn" class="btn-retry" data-i18n="retry">再試行</button>
           </div>
           <!-- アップグレードバナー（無料プランのみ表示） -->
           <div id="upgradeBanner" class="upgrade-banner hidden">
             <div class="upgrade-banner-content">
               <div class="upgrade-banner-text">
-                <strong>Proプランにアップグレード</strong>
-                <span>A3対応・複数列レイアウト・ヘッダー／フッター付き出力などの機能が利用できます</span>
+                <strong data-i18n="upgrade_banner_title">Proプランにアップグレード</strong>
+                <span data-i18n="upgrade_banner_desc">A3対応・複数列レイアウト・ヘッダー／フッター付き出力などの機能が利用できます</span>
               </div>
-              <button id="upgradeBtn" class="btn-upgrade">アップグレード</button>
+              <button id="upgradeBtn" class="btn-upgrade" data-i18n="upgrade_btn">アップグレード</button>
             </div>
           </div>
           <div id="guestBadgeRow" class="guest-badge-row hidden">
             <span class="guest-badge-icon">🎁</span>
-            <span class="guest-badge-text">ゲストアカウントとしてProプランを利用中</span>
+            <span class="guest-badge-text" data-i18n="guest_pro_badge">ゲストアカウントとしてProプランを利用中</span>
           </div>
           <div class="card-action-row">
-            <button id="manageBtn" class="btn btn-secondary hidden">サブスクリプションを管理</button>
-            <button id="logoutBtn" class="btn btn-secondary">ログアウト</button>
+            <button id="manageBtn" class="btn btn-secondary hidden" data-i18n="manage_subscription">サブスクリプションを管理</button>
+            <button id="logoutBtn" class="btn btn-secondary" data-i18n="logout">ログアウト</button>
           </div>
           <div class="card-action-row card-action-row--danger">
-            <button id="deleteAccountBtn" class="btn btn-danger">アカウントを削除</button>
+            <button id="deleteAccountBtn" class="btn btn-danger" data-i18n="delete_account">アカウントを削除</button>
           </div>
         </div>
       </div>
       <!-- メール/パスワードユーザーのみ表示 -->
       <div id="emailPasswordSettings" class="settings-section hidden">
-        <h2 class="section-title">アカウント設定</h2>
+        <h2 class="section-title" data-i18n="account_settings">アカウント設定</h2>
         <div class="info-card">
           <div class="account-change-item">
-            <p class="setting-label">メールアドレスの変更</p>
-            <input type="email" id="newEmailInput" class="form-input" placeholder="新しいメールアドレス" autocomplete="email">
-            <button id="changeEmailBtn" class="btn btn-secondary">確認メールを送信</button>
+            <p class="setting-label" data-i18n="change_email_label">メールアドレスの変更</p>
+            <input type="email" id="newEmailInput" class="form-input" data-i18n-placeholder="new_email_placeholder" placeholder="新しいメールアドレス" autocomplete="email">
+            <button id="changeEmailBtn" class="btn btn-secondary" data-i18n="send_confirm_email">確認メールを送信</button>
             <p id="changeEmailMsg" class="form-error hidden"></p>
           </div>
           <div class="account-change-item account-change-item--border">
-            <p class="setting-label">パスワードの変更</p>
-            <input type="password" id="newPasswordInput" class="form-input" placeholder="新しいパスワード（6文字以上）" autocomplete="new-password">
-            <input type="password" id="confirmPasswordInput" class="form-input" placeholder="パスワード（確認）" autocomplete="new-password">
-            <button id="changePasswordBtn" class="btn btn-secondary">パスワードを変更</button>
+            <p class="setting-label" data-i18n="change_password_label">パスワードの変更</p>
+            <input type="password" id="newPasswordInput" class="form-input" data-i18n-placeholder="new_pw_placeholder" placeholder="新しいパスワード（6文字以上）" autocomplete="new-password">
+            <input type="password" id="confirmPasswordInput" class="form-input" data-i18n-placeholder="confirm_pw_placeholder" placeholder="パスワード（確認）" autocomplete="new-password">
+            <button id="changePasswordBtn" class="btn btn-secondary" data-i18n="change_pw_btn">パスワードを変更</button>
             <p id="changePasswordMsg" class="form-error hidden"></p>
           </div>
         </div>
       </div>
     </main>
 
-    <!-- ログイン前（PDF設定の下） -->
+    <!-- ログイン前 -->
     <div id="authView" class="settings-container hidden">
       <div class="settings-section">
-        <h2 class="section-title">アカウント</h2>
+        <h2 class="section-title" data-i18n="account_section">アカウント</h2>
         <div class="info-card auth-card">
           <div class="auth-form-wrapper">
 
@@ -166,13 +167,13 @@
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
               </div>
-              <p class="benefit-text">Proプランへのアップグレードにはログインが必要です。</p>
+              <p class="benefit-text" data-i18n="pro_login_required">Proプランへのアップグレードにはログインが必要です。</p>
             </div>
 
             <!-- Google ログイン -->
             <label class="consent-label">
               <input type="checkbox" id="agreeTermsGoogle">
-              <span><a href="https://extension.siteprinter.jp/terms/" target="_blank">利用規約</a>・<a href="https://extension.siteprinter.jp/privacy/" target="_blank">プライバシーポリシー</a>に同意して続ける</span>
+              <span data-i18n-html="agree_terms_google_html"><a href="https://extension.siteprinter.jp/terms/" target="_blank">利用規約</a>・<a href="https://extension.siteprinter.jp/privacy/" target="_blank">プライバシーポリシー</a>に同意して続ける</span>
             </label>
             <button id="googleLoginBtn" class="btn-google">
               <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -181,35 +182,35 @@
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
-              Googleでログイン / 登録
+              <span data-i18n="google_login_btn">Googleでログイン / 登録</span>
             </button>
 
             <!-- 区切り -->
             <div class="auth-divider">
-              <span>または</span>
+              <span data-i18n="or_divider">または</span>
             </div>
 
             <!-- タブ -->
             <div class="auth-tab-bar">
-              <button class="auth-tab active" id="tabLogin" data-tab="login">ログイン</button>
-              <button class="auth-tab" id="tabSignup" data-tab="signup">アカウント作成</button>
+              <button class="auth-tab active" id="tabLogin" data-tab="login" data-i18n="login_tab">ログイン</button>
+              <button class="auth-tab" id="tabSignup" data-tab="signup" data-i18n="signup_tab">アカウント作成</button>
             </div>
 
             <!-- ログインフォーム -->
             <div id="loginPane" class="auth-pane">
               <form id="loginForm" class="auth-form">
                 <div class="form-group">
-                  <label for="emailInput" class="form-label">メールアドレス</label>
+                  <label for="emailInput" class="form-label" data-i18n="email_form_label">メールアドレス</label>
                   <input type="email" id="emailInput" class="form-input" placeholder="your@email.com" required autocomplete="email">
                 </div>
                 <div class="form-group">
-                  <label for="passwordInput" class="form-label">パスワード</label>
-                  <input type="password" id="passwordInput" class="form-input" placeholder="パスワードを入力" required autocomplete="current-password">
+                  <label for="passwordInput" class="form-label" data-i18n="password_form_label">パスワード</label>
+                  <input type="password" id="passwordInput" class="form-input" data-i18n-placeholder="password_placeholder" placeholder="パスワードを入力" required autocomplete="current-password">
                 </div>
                 <p id="loginError" class="form-error hidden"></p>
-                <button id="resendConfirmBtn" type="button" class="btn btn-secondary hidden">確認メールを再送信</button>
-                <button type="submit" class="btn btn-primary">ログイン</button>
-                <button id="forgotPasswordLink" type="button" class="btn-text-link">パスワードを忘れた場合</button>
+                <button id="resendConfirmBtn" type="button" class="btn btn-secondary hidden" data-i18n="resend_confirm">確認メールを再送信</button>
+                <button type="submit" class="btn btn-primary" data-i18n="login_btn">ログイン</button>
+                <button id="forgotPasswordLink" type="button" class="btn-text-link" data-i18n="forgot_password_link">パスワードを忘れた場合</button>
               </form>
             </div>
 
@@ -217,19 +218,19 @@
             <div id="signupPane" class="auth-pane hidden">
               <form id="signupForm" class="auth-form">
                 <div class="form-group">
-                  <label for="signupEmailInput" class="form-label">メールアドレス</label>
+                  <label for="signupEmailInput" class="form-label" data-i18n="email_form_label">メールアドレス</label>
                   <input type="email" id="signupEmailInput" class="form-input" placeholder="your@email.com" required autocomplete="email">
                 </div>
                 <div class="form-group">
-                  <label for="signupPasswordInput" class="form-label">パスワード</label>
-                  <input type="password" id="signupPasswordInput" class="form-input" placeholder="6文字以上のパスワード" required autocomplete="new-password">
+                  <label for="signupPasswordInput" class="form-label" data-i18n="password_form_label">パスワード</label>
+                  <input type="password" id="signupPasswordInput" class="form-input" data-i18n-placeholder="signup_pw_placeholder" placeholder="6文字以上のパスワード" required autocomplete="new-password">
                 </div>
                 <p id="signupError" class="form-error hidden"></p>
                 <label class="consent-label">
                   <input type="checkbox" id="agreeTermsSignup">
-                  <span><a href="https://extension.siteprinter.jp/terms/" target="_blank">利用規約</a>・<a href="https://extension.siteprinter.jp/privacy/" target="_blank">プライバシーポリシー</a>に同意します</span>
+                  <span data-i18n-html="agree_terms_signup_html"><a href="https://extension.siteprinter.jp/terms/" target="_blank">利用規約</a>・<a href="https://extension.siteprinter.jp/privacy/" target="_blank">プライバシーポリシー</a>に同意します</span>
                 </label>
-                <button type="submit" class="btn btn-primary">アカウントを作成</button>
+                <button type="submit" class="btn btn-primary" data-i18n="create_account_btn">アカウントを作成</button>
               </form>
             </div>
 
@@ -237,16 +238,16 @@
             <div id="forgotPane" class="auth-pane hidden">
               <div class="email-sent-box">
                 <div class="email-sent-icon">🔑</div>
-                <p class="email-sent-title">パスワードをリセット</p>
-                <p class="email-sent-desc">登録済みのメールアドレスを入力してください。パスワードリセット用のリンクを送信します。</p>
+                <p class="email-sent-title" data-i18n="reset_pw_title">パスワードをリセット</p>
+                <p class="email-sent-desc" data-i18n="reset_pw_desc">登録済みのメールアドレスを入力してください。パスワードリセット用のリンクを送信します。</p>
                 <div class="form-group" style="text-align:left;width:100%;">
-                  <label for="forgotEmailInput" class="form-label">メールアドレス</label>
+                  <label for="forgotEmailInput" class="form-label" data-i18n="email_form_label">メールアドレス</label>
                   <input type="email" id="forgotEmailInput" class="form-input" placeholder="your@email.com" autocomplete="email">
                 </div>
                 <p id="forgotError" class="form-error hidden"></p>
-                <p id="forgotSuccess" class="email-sent-desc hidden">パスワードリセットメールを送信しました。メール内のリンクをクリックしてください。</p>
-                <button id="forgotSubmitBtn" type="button" class="btn btn-primary">リセットメールを送信</button>
-                <button id="backToLoginFromForgotBtn" type="button" class="btn-text-link">ログイン画面に戻る</button>
+                <p id="forgotSuccess" class="email-sent-desc hidden" data-i18n="forgot_success_msg">パスワードリセットメールを送信しました。メール内のリンクをクリックしてください。</p>
+                <button id="forgotSubmitBtn" type="button" class="btn btn-primary" data-i18n="send_reset_btn">リセットメールを送信</button>
+                <button id="backToLoginFromForgotBtn" type="button" class="btn-text-link" data-i18n="back_to_login">ログイン画面に戻る</button>
               </div>
             </div>
 
@@ -254,11 +255,11 @@
             <div id="emailSentPane" class="auth-pane hidden">
               <div class="email-sent-box">
                 <div class="email-sent-icon">✉️</div>
-                <p class="email-sent-title">確認メールを送信しました</p>
+                <p class="email-sent-title" data-i18n="email_sent_title">確認メールを送信しました</p>
                 <p id="emailSentAddress" class="email-sent-address"></p>
-                <p class="email-sent-desc">メール内のリンクをクリックして、アカウントを有効化してください。</p>
-                <button id="resendEmailBtn" type="button" class="btn btn-secondary">確認メールを再送信</button>
-                <button id="backToLoginBtn" type="button" class="btn-text-link">ログイン画面に戻る</button>
+                <p class="email-sent-desc" data-i18n="email_sent_desc">メール内のリンクをクリックして、アカウントを有効化してください。</p>
+                <button id="resendEmailBtn" type="button" class="btn btn-secondary" data-i18n="resend_confirm">確認メールを再送信</button>
+                <button id="backToLoginBtn" type="button" class="btn-text-link" data-i18n="back_to_login">ログイン画面に戻る</button>
               </div>
             </div>
 
@@ -268,20 +269,12 @@
     </div>
 
     <div class="review-request">
-      SitePrinter を気に入っていただけましたら、<a id="reviewLink" href="https://chromewebstore.google.com/detail/dcmapjdkohckbpddkgedhcjldhbcomij/reviews" target="_blank" class="review-link">レビューを書いていただけると嬉しいです ↗</a>
+      <span id="reviewRequestText"></span>
       <div id="versionLabel" style="margin-top:6px;font-size:11px;color:#94a3b8;"></div>
     </div>
 
-    <!-- サイトリンク（最下部、常に表示） -->
-    <div class="site-footer">
-      <a href="https://extension.siteprinter.jp" target="_blank" class="site-footer-link">extension.siteprinter.jp</a>
-      <span class="site-footer-sep">·</span>
-      <a href="https://extension.siteprinter.jp/terms/" target="_blank" class="site-footer-link">利用規約</a>
-      <span class="site-footer-sep">·</span>
-      <a href="https://extension.siteprinter.jp/privacy/" target="_blank" class="site-footer-link">プライバシーポリシー</a>
-      <span class="site-footer-sep">·</span>
-      <a href="https://extension.siteprinter.jp/contact/" target="_blank" class="site-footer-link">お問い合わせ</a>
-    </div>
+    <!-- サイトリンク -->
+    <div id="siteFooter" class="site-footer"></div>
   </div>
 
   <!-- Toast Notification -->
@@ -289,7 +282,7 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <polyline points="20 6 9 17 4 12"></polyline>
     </svg>
-    <span id="toastMessage">設定を保存しました</span>
+    <span id="toastMessage"></span>
   </div>
 
   <script type="module" src="options.js"></script>

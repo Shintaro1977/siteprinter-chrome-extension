@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html data-i18n-title="page_title_preview">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SitePrinter - プレビュー</title>
+  <title>SitePrinter - Preview</title>
   <link rel="stylesheet" href="preview.css">
 </head>
 <body>
@@ -21,7 +21,7 @@
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          PDFをダウンロード
+          <span data-i18n="download_pdf">PDFをダウンロード</span>
         </button>
       </div>
     </header>
@@ -31,13 +31,13 @@
       <!-- Preview Panel -->
       <div class="preview-panel">
         <div class="preview-header">
-          <span class="preview-title">プレビュー</span>
-          <span id="pageInfo" class="page-info">1 / 1 ページ</span>
+          <span class="preview-title" data-i18n="preview_label">プレビュー</span>
+          <span id="pageInfo" class="page-info"></span>
         </div>
         <div id="previewContainer" class="preview-container">
           <div class="preview-loading">
             <span class="spinner large"></span>
-            <p>プレビューを生成中...</p>
+            <p data-i18n="generating_pdf">プレビューを生成中...</p>
           </div>
         </div>
       </div>
@@ -45,73 +45,76 @@
       <!-- Settings Panel -->
       <div class="settings-panel">
         <div class="settings-header">
-          <h2 class="settings-title">設定</h2>
+          <h2 class="settings-title" data-i18n="settings_panel_title">設定</h2>
         </div>
         <div class="settings-content">
           <!-- Layout Settings -->
           <section class="settings-section">
-            <h3 class="section-title">レイアウト</h3>
+            <h3 class="section-title" data-i18n="layout_section">レイアウト</h3>
 
             <div class="setting-item">
-              <label class="setting-label">用紙サイズ</label>
+              <label class="setting-label" data-i18n="paper_size_label">用紙サイズ</label>
               <div class="paper-size-selector">
                 <button class="paper-size-btn active" data-paper-size="a4">A4</button>
                 <button class="paper-size-btn" data-paper-size="a3">A3</button>
+                <button class="paper-size-btn" data-paper-size="letter">Letter</button>
+                <button class="paper-size-btn" data-paper-size="legal">Legal</button>
               </div>
+              <p id="paperSizeDims" class="setting-description"></p>
             </div>
 
             <div class="setting-item">
-              <label class="setting-label">列数</label>
+              <label class="setting-label" data-i18n="columns_label">列数</label>
               <div class="column-selector">
-                <button class="column-btn active" data-columns="1">1列</button>
-                <button class="column-btn" data-columns="2">2列</button>
-                <button class="column-btn" data-columns="3">3列</button>
-                <button class="column-btn" data-columns="4">4列</button>
+                <button class="column-btn active" data-columns="1" data-i18n="col_1">1列</button>
+                <button class="column-btn" data-columns="2" data-i18n="col_2">2列</button>
+                <button class="column-btn" data-columns="3" data-i18n="col_3">3列</button>
+                <button class="column-btn" data-columns="4" data-i18n="col_4">4列</button>
               </div>
             </div>
 
             <div class="setting-item">
-              <label class="setting-label">重複エリア</label>
+              <label class="setting-label" data-i18n="overlap_label">重複エリア</label>
               <div class="overlap-selector">
-                <button class="overlap-btn" data-overlap="small">小</button>
-                <button class="overlap-btn active" data-overlap="medium">中</button>
-                <button class="overlap-btn" data-overlap="large">大</button>
+                <button class="overlap-btn" data-overlap="small" data-i18n="overlap_small">小</button>
+                <button class="overlap-btn active" data-overlap="medium" data-i18n="overlap_medium">中</button>
+                <button class="overlap-btn" data-overlap="large" data-i18n="overlap_large">大</button>
               </div>
-              <p class="setting-description">セクション間の重なり量（2% / 5% / 8%）</p>
+              <p class="setting-description" data-i18n="overlap_desc">セクション間の重なり量（2% / 5% / 8%）</p>
             </div>
 
             <div class="setting-item">
               <label class="checkbox-label">
                 <input type="checkbox" id="showBorder" checked>
-                <span>境界線を表示</span>
+                <span data-i18n="show_border">境界線を表示</span>
               </label>
             </div>
           </section>
 
           <!-- Header/Footer Settings -->
           <section class="settings-section">
-            <h3 class="section-title">ヘッダー・フッター</h3>
+            <h3 class="section-title" data-i18n="header_footer_section">ヘッダー・フッター</h3>
 
             <div class="setting-item">
               <label class="checkbox-label">
                 <input type="checkbox" id="showHeader">
-                <span>ヘッダーを表示</span>
+                <span data-i18n="show_header">ヘッダーを表示</span>
               </label>
-              <p class="setting-description">ページタイトルとURLを表示</p>
+              <p class="setting-description" data-i18n="header_desc">ページタイトルとURLを表示</p>
             </div>
 
             <div class="setting-item">
               <label class="checkbox-label">
                 <input type="checkbox" id="showFooter">
-                <span>フッターを表示</span>
+                <span data-i18n="show_footer">フッターを表示</span>
               </label>
-              <p class="setting-description">日時・ページ番号・ロゴを表示</p>
+              <p class="setting-description" data-i18n="footer_desc">日時・ページ番号・ロゴを表示</p>
             </div>
           </section>
 
           <!-- Screenshot List -->
           <section class="settings-section">
-            <h3 class="section-title">スクリーンショット</h3>
+            <h3 class="section-title" data-i18n="screenshots_section">スクリーンショット</h3>
             <div id="screenshotList" class="screenshot-list">
               <!-- Populated by JS -->
             </div>
@@ -120,15 +123,15 @@
           <!-- Capture Info -->
           <section class="settings-section">
             <div class="capture-info-row">
-              <span class="capture-info-label">画像形式</span>
+              <span class="capture-info-label" data-i18n="image_format_label">画像形式</span>
               <span id="captureFormatInfo" class="capture-info-value">—</span>
             </div>
           </section>
 
           <!-- Notice -->
           <div class="settings-notice">
-            <span class="capture-info-hint">画像形式はオプションから変更できます</span>
-            <span>プレビューと実際のPDFは完全に同一ではない場合があります</span>
+            <span class="capture-info-hint" data-i18n="image_format_hint">画像形式はオプションから変更できます</span>
+            <span data-i18n="preview_note">プレビューと実際のPDFは完全に同一ではない場合があります</span>
           </div>
         </div>
       </div>
@@ -141,8 +144,8 @@
     <div class="modal-content">
       <div class="modal-header">
         <div style="font-size: 48px; color: #f59e0b; margin-bottom: 16px;">✦</div>
-        <h3>Pro機能が必要です</h3>
-        <p>カスタム設定を使用したPDF生成はProプランでご利用いただけます。</p>
+        <h3 data-i18n="pro_required_title">Pro機能が必要です</h3>
+        <p data-i18n="pro_required_desc">カスタム設定を使用したPDF生成はProプランでご利用いただけます。</p>
       </div>
       <div class="modal-body">
         <div class="feature-list">
@@ -150,32 +153,32 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
-            <span>自由な列数設定（2〜4列）</span>
+            <span data-i18n="feature_columns">自由な列数設定（2〜4列）</span>
           </div>
           <div class="feature-item">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
-            <span>ヘッダー・フッターのカスタマイズ</span>
+            <span data-i18n="feature_header_footer">ヘッダー・フッターのカスタマイズ</span>
           </div>
           <div class="feature-item">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
-            <span>A3用紙サイズ対応</span>
+            <span data-i18n="feature_a3">A3用紙サイズ対応</span>
           </div>
         </div>
       </div>
       <div class="modal-footer" id="upgradeModalFooter">
         <button id="upgradeModalBtn" class="btn btn-primary">
           <span style="font-size: 16px; margin-right: 4px;">✦</span>
-          <span>Proプランにアップグレード</span>
+          <span data-i18n="upgrade_pro_btn">Proプランにアップグレード</span>
         </button>
-        <button id="cancelModalBtn" class="btn btn-secondary">キャンセル</button>
+        <button id="cancelModalBtn" class="btn btn-secondary" data-i18n="cancel">キャンセル</button>
       </div>
       <div id="afterUpgradeMsg" style="display:none; padding: 16px 24px 24px; text-align:center;">
-        <p style="font-size:14px; color:#334155; margin-bottom:16px;">アップグレードが完了したら、この画面を再読み込みするとPDFを作成できます。</p>
-        <button id="reloadBtn" class="btn btn-primary" style="width:100%;">再読み込みしてPDFを作成</button>
+        <p style="font-size:14px; color:#334155; margin-bottom:16px;" data-i18n="after_upgrade_msg">アップグレードが完了したら、この画面を再読み込みするとPDFを作成できます。</p>
+        <button id="reloadBtn" class="btn btn-primary" style="width:100%;" data-i18n="reload_and_create">再読み込みしてPDFを作成</button>
       </div>
     </div>
   </div>
@@ -184,7 +187,7 @@
   <div id="loadingOverlay" class="loading-overlay hidden">
     <div class="loading-content">
       <span class="spinner large"></span>
-      <p id="loadingText">PDFを生成中...</p>
+      <p id="loadingText" data-i18n="generating_pdf">PDFを生成中...</p>
       <p id="loadingPercent" class="loading-percent"></p>
     </div>
   </div>

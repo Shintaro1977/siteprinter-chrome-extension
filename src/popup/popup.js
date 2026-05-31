@@ -1,3 +1,7 @@
+import { t, applyI18n, isJa } from '../lib/i18n.js';
+
+applyI18n();
+
 const planBadge = document.getElementById('planBadge');
 const settingsBtn = document.getElementById('settingsBtn');
 const mainView = document.getElementById('mainView');
@@ -31,7 +35,7 @@ async function updatePlanBadge() {
   const { userPlan } = await chrome.storage.local.get(['userPlan']);
   const isPro = userPlan === 'pro';
 
-  planBadge.textContent = isPro ? 'Pro' : '無料';
+  planBadge.textContent = isPro ? 'Pro' : t('plan_free');
   planBadge.className = `plan-badge ${isPro ? 'plan-pro' : 'plan-free'}`;
 }
 
@@ -58,7 +62,7 @@ async function loadTabs() {
   tabListContainer.innerHTML = `
     <div class="tab-list-loading">
       <span class="spinner"></span>
-      タブを読み込み中...
+      ${t('loading_tabs')}
     </div>
   `;
 
@@ -68,13 +72,13 @@ async function loadTabs() {
     selectedTabs = allTabs.map((tab) => tab.id);
     renderTabList();
   } catch (error) {
-    tabListContainer.innerHTML = `<div class="tab-list-loading">タブの読み込みに失敗しました</div>`;
+    tabListContainer.innerHTML = `<div class="tab-list-loading">${t('tabs_load_failed')}</div>`;
   }
 }
 
 function renderTabList() {
   if (allTabs.length === 0) {
-    tabListContainer.innerHTML = `<div class="tab-list-loading">キャプチャ可能なタブがありません</div>`;
+    tabListContainer.innerHTML = `<div class="tab-list-loading">${t('no_capturable_tabs')}</div>`;
     return;
   }
 
@@ -119,13 +123,13 @@ async function handleCapture() {
     if (activeTab) tabsToCapture = [activeTab.id];
   } else {
     if (selectedTabs.length === 0) {
-      alert('キャプチャするタブを選択してください');
+      alert(t('select_tabs_alert'));
       return;
     }
     tabsToCapture = [...selectedTabs];
   }
 
-  showLoading('スクリーンショットを取得中...');
+  showLoading(t('capturing_loading'));
 
   // Wait for the service worker to acknowledge before closing.
   // Without this, closing the popup while the SW is dormant can drop the message.

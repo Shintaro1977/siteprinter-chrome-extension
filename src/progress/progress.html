@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Capturing Screenshot...</title>
+  <title>SitePrinter</title>
   <link rel="stylesheet" href="progress.css">
 </head>
 <body>
@@ -24,10 +24,10 @@
         <line x1="12" y1="9" x2="12" y2="13"></line>
         <line x1="12" y1="17" x2="12.01" y2="17"></line>
       </svg>
-      <span>処理中はタブを切り替えないでください</span>
+      <span id="warningText"></span>
     </div>
     <div id="buttonContainer">
-      <button id="cancelBtn" class="cancel-btn">キャンセル</button>
+      <button id="cancelBtn" class="cancel-btn"></button>
     </div>
     <div id="processingLabel" class="hidden">
       <span>Processing...</span>
