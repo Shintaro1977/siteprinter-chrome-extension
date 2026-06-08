@@ -47,6 +47,10 @@ class ProgressController {
           this.showError(message.error);
           break;
 
+        case 'warning':
+          this.showWarning(message.text);
+          break;
+
         default:
           console.warn('[Progress] Unknown message type:', message.type);
       }
@@ -78,17 +82,45 @@ class ProgressController {
     this.statusLabel.classList.remove('hidden');
   }
 
-  updateProgress(percent, current, total) {
+  updateProgress(percent, current, total, estimatedRemainingMs = null) {
     // Ensure percent is within 0-100
     const clampedPercent = Math.max(0, Math.min(100, percent));
 
     // Update progress bar width
     this.progressBar.style.width = `${clampedPercent}%`;
 
-    // Update percentage text
-    this.progressPercent.textContent = `${clampedPercent}%`;
+    // Format remaining time
+    let percentText = `${clampedPercent}%`;
+    if (estimatedRemainingMs !== null && estimatedRemainingMs > 0) {
+      const remainingSecs = Math.ceil(estimatedRemainingMs / 1000);
+      const mins = Math.floor(remainingSecs / 60);
+      const secs = remainingSecs % 60;
+      if (mins > 0) {
+        percentText += ` (${mins}m ${secs}s)`;
+      } else {
+        percentText += ` (${secs}s)`;
+      }
+    }
 
-    console.log(`[Progress] ${clampedPercent}% (${current}/${total})`);
+    // Update percentage text
+    this.progressPercent.textContent = percentText;
+
+    console.log(`[Progress] ${clampedPercent}% (${current}/${total})${estimatedRemainingMs ? ` ETA: ${estimatedRemainingMs}ms` : ''}`);
+  }
+
+  showWarning(text) {
+    // Create warning element if it doesn't exist
+    let warningContainer = document.getElementById('warningContainer');
+    if (!warningContainer) {
+      warningContainer = document.createElement('div');
+      warningContainer.id = 'warningContainer';
+      warningContainer.style.cssText = 'margin: 10px 0; padding: 8px 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; color: #856404; font-size: 12px;';
+      const statusLabel = document.getElementById('statusLabel');
+      statusLabel.parentNode.insertBefore(warningContainer, statusLabel.nextSibling);
+    }
+    warningContainer.textContent = text;
+    warningContainer.style.display = 'block';
+    console.log('[Progress] Warning:', text);
   }
 
   showProcessing() {

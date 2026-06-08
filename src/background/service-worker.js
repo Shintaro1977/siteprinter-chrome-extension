@@ -169,7 +169,7 @@ class ProgressManager {
     }).catch(() => {});
   }
 
-  sendProgress(current, total) {
+  sendProgress(current, total, estimatedRemainingMs = null) {
     const percent = Math.round((current / total) * 100);
     console.log(`[ProgressManager] Sending progress: ${percent}% (${current}/${total})`);
     chrome.runtime.sendMessage({
@@ -177,6 +177,7 @@ class ProgressManager {
       percent,
       current,
       total,
+      estimatedRemainingMs,
     }).catch((error) => {
       // Window might be closed by user, ignore error
       console.warn('[ProgressManager] Failed to send progress:', error.message);
@@ -219,6 +220,13 @@ class ProgressManager {
     chrome.runtime.sendMessage({
       type: 'error',
       error: error,
+    }).catch(() => {});
+  }
+
+  sendWarning(text) {
+    chrome.runtime.sendMessage({
+      type: 'warning',
+      text,
     }).catch(() => {});
   }
 
@@ -424,6 +432,7 @@ async function captureFullPage(tabId) {
     if (actualHeight > MAX_TOTAL_HEIGHT) {
       console.warn(`[SitePrinter] Page height (${actualHeight}px) exceeds maximum (${MAX_TOTAL_HEIGHT}px). Capping to maximum.`);
       actualHeight = MAX_TOTAL_HEIGHT;
+      progressManager.sendWarning('⚠️ This page is very long. PDF generation will take 2–5 minutes.');
     }
 
     const SECTION_OVERLAP = 100;
@@ -438,6 +447,7 @@ async function captureFullPage(tabId) {
 
     // Chrome limits captureVisibleTab to 2 calls per second
     const MIN_CAPTURE_INTERVAL = 600;
+    const captureAllStartTime = Date.now();
 
     for (let i = 0; i < sectionPositions.length; i++) {
       if (progressManager.isCancelled()) {
@@ -484,7 +494,13 @@ async function captureFullPage(tabId) {
         await sendPortMessage({ type: 'hideFixed' });
       }
 
-      progressManager.sendProgress(i + 1, sectionPositions.length);
+      // Calculate estimated remaining time
+      const elapsedTotal = Date.now() - captureAllStartTime;
+      const avgTimePerSection = elapsedTotal / (i + 1);
+      const remainingSections = sectionPositions.length - (i + 1);
+      const estimatedRemainingMs = Math.round(remainingSections * avgTimePerSection);
+
+      progressManager.sendProgress(i + 1, sectionPositions.length, estimatedRemainingMs);
 
       const elapsed = Date.now() - captureStartTime;
       const remainingDelay = MIN_CAPTURE_INTERVAL - elapsed;
