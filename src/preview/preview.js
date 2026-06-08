@@ -336,6 +336,43 @@ function renderScreenshotList() {
     .join('');
 }
 
+function calculatePageCount(validScreenshots) {
+  // Lightweight page count calculation without DOM construction
+  const columns = settings.columns;
+  const overlapRatio = OVERLAP_SIZES[settings.overlap];
+
+  const paperSize = PAPER_SIZES[settings.paperSize];
+  const paperWidth = paperSize.width;
+  const paperHeight = paperSize.height;
+
+  const headerHeight = settings.showHeader ? (HEADER_HEIGHT + CONTENT_SPACING) : 0;
+  const footerHeight = settings.showFooter ? (FOOTER_HEIGHT + CONTENT_SPACING) : 0;
+  const contentWidth = paperWidth - PAGE_MARGIN * 2;
+  const contentHeight = paperHeight - PAGE_MARGIN * 2 - headerHeight - footerHeight;
+
+  const labelSpacing = 2;
+  const labelHeight = 3;
+  const availableCellHeight = contentHeight - labelSpacing - labelHeight;
+
+  const cellWidthMM = (contentWidth - (columns - 1) * 2) / columns;
+  const cellHeightMM = availableCellHeight;
+  const cellsPerPage = columns;
+
+  let totalPages = 0;
+
+  for (const screenshot of validScreenshots) {
+    if (!screenshot.dataUrl) continue;
+
+    const cellAspect = cellWidthMM / cellHeightMM;
+    const cellContentHeightPx = screenshot.width / cellAspect;
+    const stepHeightPx = cellContentHeightPx * (1 - overlapRatio);
+    const totalSections = Math.max(1, Math.ceil((screenshot.height - cellContentHeightPx * overlapRatio) / stepHeightPx));
+    totalPages += Math.ceil(totalSections / cellsPerPage);
+  }
+
+  return totalPages;
+}
+
 function renderPreview() {
   const validScreenshots = screenshots.filter((s) => !s.error && s.dataUrl);
   if (validScreenshots.length === 0) {
@@ -347,8 +384,23 @@ function renderPreview() {
     return;
   }
 
+  // Calculate page count (lightweight)
+  const pageCount = calculatePageCount(validScreenshots);
+  pageInfo.textContent = t('page_info_fmt').replace('{n}', pageCount);
+
+  // If page count is too high, skip preview and show message
+  const MAX_PREVIEW_PAGES = 20;
+  if (pageCount > MAX_PREVIEW_PAGES) {
+    previewContainer.innerHTML = `
+      <div class="preview-disabled">
+        <p>⚠️ ${t('preview_disabled_message')}</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Calculate and display normal preview
   const pages = calculateLayout(validScreenshots);
-  pageInfo.textContent = t('page_info_fmt').replace('{n}', pages.length);
 
   previewContainer.innerHTML = pages
     .map(

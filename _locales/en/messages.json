@@ -7,5 +7,8 @@
   },
   "contextMenuTitle": {
     "message": "Create PDF for Print"
+  },
+  "preview_disabled_message": {
+    "message": "This page is too long to display in preview. Please adjust your settings and generate the PDF. PDF generation will take 2–5 minutes."
   }
 }
