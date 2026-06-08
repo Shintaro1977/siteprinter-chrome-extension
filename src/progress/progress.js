@@ -60,15 +60,24 @@ class ProgressController {
   setupCancelButton() {
     this.cancelBtn.addEventListener('click', () => {
       console.log('[Progress] Cancel button clicked');
+      this.sendCancelMessage();
+    });
 
-      // Disable button to prevent multiple clicks
-      this.cancelBtn.disabled = true;
-      this.cancelBtn.textContent = t('cancelling');
+    // Also send cancel when window is closed
+    window.addEventListener('beforeunload', () => {
+      console.log('[Progress] Window closing, sending cancel message');
+      this.sendCancelMessage();
+    });
+  }
 
-      // Send cancel message to service worker
-      chrome.runtime.sendMessage({ type: 'cancel' }).catch((error) => {
-        console.error('[Progress] Failed to send cancel message:', error);
-      });
+  sendCancelMessage() {
+    // Disable button to prevent multiple clicks
+    this.cancelBtn.disabled = true;
+    this.cancelBtn.textContent = t('cancelling');
+
+    // Send cancel message to service worker
+    chrome.runtime.sendMessage({ type: 'cancel' }).catch((error) => {
+      console.error('[Progress] Failed to send cancel message:', error);
     });
   }
 
