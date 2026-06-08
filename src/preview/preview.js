@@ -389,7 +389,7 @@ function renderPreview() {
   pageInfo.textContent = t('page_info_fmt').replace('{n}', pageCount);
 
   // If page count is too high, skip preview and show message
-  const MAX_PREVIEW_PAGES = 20;
+  const MAX_PREVIEW_PAGES = 15;
   if (pageCount > MAX_PREVIEW_PAGES) {
     previewContainer.innerHTML = `
       <div class="preview-disabled">
