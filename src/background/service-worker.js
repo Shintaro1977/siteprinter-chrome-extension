@@ -545,7 +545,11 @@ async function captureFullPage(tabId) {
       height: actualHeight,
     };
   } catch (error) {
-    console.error('[SitePrinter] Capture error:', error);
+    if (error instanceof CancelledError) {
+      console.log('[SitePrinter] Capture cancelled by user');
+    } else {
+      console.error('[SitePrinter] Capture error:', error);
+    }
     throw error;
   } finally {
     chrome.runtime.onMessage.removeListener(cancelListener);
